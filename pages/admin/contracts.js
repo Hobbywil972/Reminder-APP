@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AddContractSPA from '../../components/AddContractSPA';
-import { SortableTh, useSortableData } from '../commercial/SortableTh';
+import { SortableTh, useSortableData } from '../../components/SortableTh';
 
 function formatDateFr(dateStr) {
   if (!dateStr) return '';

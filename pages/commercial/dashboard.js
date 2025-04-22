@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProductsSection from '../admin/products';
 import ContractsSection from '../admin/contracts';
-import { SortableTh, useSortableData } from './SortableTh';
+import { SortableTh, useSortableData } from '../../components/SortableTh';
 import CommercialDashboardWidgets from './CommercialDashboardWidgets';
 
 function ClientsSection() {
