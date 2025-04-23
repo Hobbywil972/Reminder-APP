@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
   const session = await getSession(context);
-  if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+  if (!session) {
     return {
       redirect: {
         destination: '/auth/login',
@@ -14,10 +14,12 @@ export async function getServerSideProps(context) {
   }
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true },
-    orderBy: { name: 'asc' },
-  });
+  const users = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN'
+    ? await prisma.user.findMany({
+        select: { id: true, name: true, email: true, role: true },
+        orderBy: { name: 'asc' },
+      })
+    : [];
   return { props: { user: session.user, users } };
 }
 
@@ -521,7 +523,7 @@ export default function AdminDashboard({ user, users }) {
         {section === 'users' && <UsersSection users={users} user={user} />}
         {section === 'clients' && <ClientsSection user={user} />}
         {section === 'products' && <ProductsSection user={user} />}
-        {section === 'contracts' && <ContractsSection />}
+        {section === 'contracts' && <ContractsSection user={user} />}
         {section === 'configuration' && <Configuration user={user} />}
       </main>
     </div>

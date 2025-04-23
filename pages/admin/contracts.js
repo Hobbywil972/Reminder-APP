@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import AddContractSPA from '../../components/AddContractSPA';
 import { SortableTh, useSortableData } from '../../components/SortableTh';
 
@@ -9,7 +10,10 @@ function formatDateFr(dateStr) {
   return d.toLocaleDateString('fr-FR');
 }
 
-export default function ContractsSection() {
+export default function ContractsSection({ user: userProp }) {
+  const { data: session } = useSession();
+  const user = userProp || session?.user;
+
   const [sort, setSort] = useState({ key: 'client', dir: 'asc' });
   const [contracts, setContracts] = useState([]);
   const [clients, setClients] = useState([]);
@@ -217,106 +221,120 @@ const [contractsData, clientsData, productsData] = await Promise.all([
             </thead>
             <tbody>
               {filteredContracts.slice((page-1)*contractsPerPage, page*contractsPerPage).map((contract, idx) => (
-                <tr key={contract.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopLeftRadius: idx === 0 ? 18 : 0 }}>{contract.client?.name}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{contract.contractProducts.map(cp => cp.product.reference).join(', ')}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{formatDateFr(contract.startDate)}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{(() => {
-  let fin = contract.endDate;
-  if (!fin && contract.startDate && contract.duration) {
-    const d = new Date(contract.startDate);
-    d.setMonth(d.getMonth() + Number(contract.duration));
-    if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
-    fin = d.toISOString();
-  }
-  return formatDateFr(fin);
-})()}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{contract.email || ''}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{contract.status || ''}</td>
-                  <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>
-                    <button
-                      style={{
-                        background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '9px 0',
-                        fontWeight: 800,
-                        fontSize: 15,
-                        fontFamily: 'Montserrat, sans-serif',
-                        boxShadow: '0 2px 8px #00b3e640',
-                        cursor: 'pointer',
-                        transition: 'background 0.18s, box-shadow 0.18s',
-                        width: 120,
-                        letterSpacing: 1,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        textTransform: 'uppercase',
-                        marginRight: 8,
-                      }}
-                      onMouseOver={e => {
-                        e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
-                        e.currentTarget.style.boxShadow = '0 6px 18px #00b3e660';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px #00b3e640';
-                      }}
-                      onClick={() => { setEditContract(contract); setMode('edit'); }}
-                    >
-                      <span role="img" aria-label="crayon">✏️</span> MODIFIER
-                    </button>
-                    <button
-                      style={{
-                        background: 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '9px 0',
-                        fontWeight: 800,
-                        fontSize: 15,
-                        fontFamily: 'Montserrat, sans-serif',
-                        boxShadow: '0 2px 8px #ff495770',
-                        cursor: 'pointer',
-                        transition: 'background 0.18s, box-shadow 0.18s',
-                        width: 120,
-                        letterSpacing: 1,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        textTransform: 'uppercase',
-                      }}
-                      onMouseOver={e => {
-                        e.currentTarget.style.background = 'linear-gradient(90deg, #c9001a 60%, #ff8d43 100%)';
-                        e.currentTarget.style.boxShadow = '0 6px 18px #ff495780';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.background = 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px #ff495770';
-                      }}
-                      onClick={async () => {
-                        if (!window.confirm('Confirmer la suppression du contrat ?')) return;
-                        const res = await fetch('/api/admin/contracts', {
-                          method: 'DELETE',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ id: contract.id }),
-                          credentials: 'include',
-                        });
-                        if (res.ok) {
-                          setContracts(contracts.filter(c => c.id !== contract.id));
-                        } else {
-                          const data = await res.json();
-                          alert(data.error || 'Erreur lors de la suppression');
-                        }
-                      }}
-                    >
-                      <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
-                    </button>
-                  </td>
-                </tr>
+  <tr key={contract.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopLeftRadius: idx === 0 ? 18 : 0 }}>
+      {contract.client?.name}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
+      {contract.contractProducts.map(cp => cp.product.reference).join(', ')}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
+      {formatDateFr(contract.startDate)}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
+      {(() => {
+        let fin = contract.endDate;
+        if (!fin && contract.startDate && contract.duration) {
+          const d = new Date(contract.startDate);
+          d.setMonth(d.getMonth() + Number(contract.duration));
+          if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
+          fin = d.toISOString();
+        }
+        return formatDateFr(fin);
+      })()}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
+      {contract.email || ''}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
+      {contract.status || ''}
+    </td>
+    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>
+      <button
+        style={{
+          background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 10,
+          padding: '9px 0',
+          fontWeight: 800,
+          fontSize: 15,
+          fontFamily: 'Montserrat, sans-serif',
+          boxShadow: '0 2px 8px #00b3e640',
+          cursor: 'pointer',
+          transition: 'background 0.18s, box-shadow 0.18s',
+          width: 120,
+          letterSpacing: 1,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          textTransform: 'uppercase',
+          marginRight: 8,
+        }}
+        onMouseOver={e => {
+          e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
+          e.currentTarget.style.boxShadow = '0 6px 18px #00b3e660';
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
+          e.currentTarget.style.boxShadow = '0 2px 8px #00b3e640';
+        }}
+        onClick={() => { setEditContract(contract); setMode('edit'); }}
+      >
+        <span role="img" aria-label="crayon">✏️</span> MODIFIER
+      </button>
+      {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+        <button
+          style={{
+            background: 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 10,
+            padding: '9px 0',
+            fontWeight: 800,
+            fontSize: 15,
+            fontFamily: 'Montserrat, sans-serif',
+            boxShadow: '0 2px 8px #ff495770',
+            cursor: 'pointer',
+            transition: 'background 0.18s, box-shadow 0.18s',
+            width: 120,
+            letterSpacing: 1,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            textTransform: 'uppercase',
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.background = 'linear-gradient(90deg, #c9001a 60%, #ff8d43 100%)';
+            e.currentTarget.style.boxShadow = '0 6px 18px #ff495780';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.background = 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)';
+            e.currentTarget.style.boxShadow = '0 2px 8px #ff495770';
+          }}
+          onClick={async () => {
+            if (!window.confirm('Confirmer la suppression du contrat ?')) return;
+            const res = await fetch('/api/admin/contracts', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: contract.id }),
+              credentials: 'include',
+            });
+            if (res.ok) {
+              setContracts(contracts.filter(c => c.id !== contract.id));
+            } else {
+              const data = await res.json();
+              alert(data.error || 'Erreur lors de la suppression');
+            }
+          }}
+        >
+          <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
+        </button>
+      )}
+    </td>
+  </tr>
               ))}
             </tbody>
           </table>
