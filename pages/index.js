@@ -12,6 +12,8 @@ export default function Home() {
       router.replace('/admin');
     } else if (session?.user?.role === 'COMMERCIAL') {
       router.replace('/commercial');
+    } else if (status === 'unauthenticated' || !session) {
+      router.replace('/api/auth/signin');
     }
   }, [session, status, router]);
 
