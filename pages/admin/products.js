@@ -258,8 +258,14 @@ export default function ProductsSection({ user }) {
                               if (res.ok) {
                                 fetchProducts();
                               } else {
-                                const data = await res.json();
-                                alert(data.error || 'Erreur lors de la suppression');
+                                let message = 'Erreur lors de la suppression';
+                                try {
+                                  const data = await res.json();
+                                  message = data.error || message;
+                                } catch (e) {
+                                  // Réponse vide (ex: 204), on garde le message générique
+                                }
+                                alert(message);
                               }
                             }
                           }}
