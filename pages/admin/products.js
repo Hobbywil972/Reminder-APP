@@ -85,6 +85,14 @@ export default function ProductsSection({ user }) {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 26, color: '#00b3e6', margin: 0 }}>Produits</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button
+            style={{ background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 16, fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620', cursor: 'pointer', transition: 'background 0.15s' }}
+            onClick={() => setMode('add')}
+            onMouseOver={e => (e.currentTarget.style.background = '#0090b3')}
+            onMouseOut={e => (e.currentTarget.style.background = '#00b3e6')}
+          >
+            <span role="img" aria-label="plus">➕</span> Ajouter un produit
+          </button>
           <label style={{ fontWeight: 700, color: '#00b3e6', fontFamily: 'Montserrat, sans-serif', fontSize: 15, display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '1.5px solid #00b3e6', borderRadius: 10, boxShadow: '0 2px 8px #00b3e610', padding: '6px 20px', marginRight: 0 }}>
             <span role="img" aria-label="voir">👁️</span> Afficher&nbsp;
             <select

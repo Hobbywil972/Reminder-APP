@@ -5,8 +5,10 @@ import ProductsSection from '../admin/products';
 import ContractsSection from '../admin/contracts';
 import { SortableTh, useSortableData } from '../../components/SortableTh';
 import CommercialDashboardWidgets from './CommercialDashboardWidgets';
+import AddClientSPA from '../../components/AddClientSPA';
+import AddProductSPA from '../../components/AddProductSPA';
 
-function ClientsSection() {
+function ClientsSection({ user }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('list'); // "list", "add", "edit"
@@ -37,6 +39,10 @@ function ClientsSection() {
 
   if (loading) return <p>Chargement...</p>;
 
+  if (mode === 'add') {
+    return <AddClientSPA onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
+  }
+
   return (
     <section style={{ marginTop: 40 }}>
       {/* Barre de recherche nom */}
@@ -51,6 +57,14 @@ function ClientsSection() {
             style={{ padding: 8, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', minWidth: 180, background: '#f6fcff' }}
           />
         </div>
+        <button
+          style={{ background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 16, fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620', cursor: 'pointer', transition: 'background 0.15s', marginLeft: 'auto' }}
+          onClick={() => setMode('add')}
+          onMouseOver={e => (e.currentTarget.style.background = '#0090b3')}
+          onMouseOut={e => (e.currentTarget.style.background = '#00b3e6')}
+        >
+          <span role="img" aria-label="plus">➕</span> Ajouter un client
+        </button>
       </div>
       <div style={{
         background: '#fff',
@@ -81,6 +95,16 @@ function ClientsSection() {
   );
 }
 
+function ProductsSectionWrapper({ user }) {
+  const [mode, setMode] = useState('list');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  if (mode === 'add') {
+    return <AddProductSPA onSuccess={() => { setMode('list'); setRefreshKey(k => k + 1); }} onCancel={() => setMode('list')} />;
+  }
+
+  return <ProductsSection key={refreshKey} user={user} onAddProduct={() => setMode('add')} />;
+}
 
 export async function getServerSideProps(context) {
   const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
@@ -224,7 +248,7 @@ export default function CommercialDashboard({ user }) {
         <div style={{ padding: '0 40px 40px 40px' }}>
           {section === 'dashboard' && <CommercialDashboardWidgets />}
           {section === 'clients' && <ClientsSection user={user} />}
-          {section === 'products' && <ProductsSection user={user} />}
+          {section === 'products' && <ProductsSectionWrapper user={user} />}
           {section === 'contracts' && <ContractsSection />}
         </div>
       </main>

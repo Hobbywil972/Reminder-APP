@@ -279,12 +279,6 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
             <option value="EXPIRE">Expiré</option>
             <option value="RESILIE">Résilié</option>
           </select>
-        <label style={{ fontWeight: 'bold' }}>Statut</label>
-        <select value={status} onChange={e => setStatus(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }}>
-          <option value="EN_COURS">En cours</option>
-          <option value="EXPIRE">Expiré</option>
-          <option value="RESILIE">Résilié</option>
-        </select>
         <button
             type="submit"
             style={{

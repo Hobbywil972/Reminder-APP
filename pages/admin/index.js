@@ -119,9 +119,11 @@ function UsersSection({ users, user }) {
                     onMouseOut={e => (e.currentTarget.style.background = '#ff4957')}
                     onClick={async () => {
                       if (window.confirm('Confirmer la suppression ?')) {
-                        const res = await fetch(`/api/admin/users/${u.id}`, {
+                        const res = await fetch('/api/admin/users', {
                           method: 'DELETE',
                           credentials: 'include',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: u.id }),
                         });
                         if (res.ok) {
                           window.location.reload();
