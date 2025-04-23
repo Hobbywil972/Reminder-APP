@@ -180,43 +180,93 @@ export default function ProductsSection({ user }) {
                   <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>
                     {/* Bouton Modifier visible uniquement pour ADMIN */}
                     {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
-                      <button
-                        style={{
-                          background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 10,
-                          padding: '9px 0',
-                          fontWeight: 800,
-                          fontSize: 15,
-                          fontFamily: 'Montserrat, sans-serif',
-                          boxShadow: '0 2px 8px #00b3e640',
-                          cursor: 'pointer',
-                          transition: 'background 0.18s, box-shadow 0.18s',
-                          width: 140,
-                          letterSpacing: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          textTransform: 'uppercase',
-                          marginRight: 8,
-                        }}
-                        onMouseOver={e => {
-                          e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
-                          e.currentTarget.style.boxShadow = '0 6px 18px #00b3e660';
-                        }}
-                        onMouseOut={e => {
-                          e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
-                          e.currentTarget.style.boxShadow = '0 2px 8px #00b3e640';
-                        }}
-                        onClick={() => {
-                          setEditProduct(product);
-                          setMode('edit');
-                        }}
-                      >
-                        <span role="img" aria-label="crayon">✏️</span> MODIFIER
-                      </button>
+                      <>
+                        <button
+                          style={{
+                            background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 10,
+                            padding: '9px 0',
+                            fontWeight: 800,
+                            fontSize: 15,
+                            fontFamily: 'Montserrat, sans-serif',
+                            boxShadow: '0 2px 8px #00b3e640',
+                            cursor: 'pointer',
+                            transition: 'background 0.18s, box-shadow 0.18s',
+                            width: 140,
+                            letterSpacing: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            textTransform: 'uppercase',
+                            marginRight: 8,
+                          }}
+                          onMouseOver={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
+                            e.currentTarget.style.boxShadow = '0 6px 18px #00b3e660';
+                          }}
+                          onMouseOut={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px #00b3e640';
+                          }}
+                          onClick={() => {
+                            setEditProduct(product);
+                            setMode('edit');
+                          }}
+                        >
+                          <span role="img" aria-label="crayon">✏️</span> MODIFIER
+                        </button>
+                        <button
+                          style={{
+                            background: 'linear-gradient(90deg, #ff4957 60%, #ffb347 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 10,
+                            padding: '9px 0',
+                            fontWeight: 800,
+                            fontSize: 15,
+                            fontFamily: 'Montserrat, sans-serif',
+                            boxShadow: '0 2px 8px #ff495740',
+                            cursor: 'pointer',
+                            transition: 'background 0.18s, box-shadow 0.18s',
+                            width: 140,
+                            letterSpacing: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            textTransform: 'uppercase',
+                          }}
+                          onMouseOver={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #c9001a 60%, #ffb347 100%)';
+                            e.currentTarget.style.boxShadow = '0 6px 18px #ff495760';
+                          }}
+                          onMouseOut={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #ff4957 60%, #ffb347 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px #ff495740';
+                          }}
+                          onClick={async () => {
+                            if (window.confirm('Confirmer la suppression de ce produit ?')) {
+                              const res = await fetch('/api/admin/products', {
+                                method: 'DELETE',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: product.id }),
+                              });
+                              if (res.ok) {
+                                fetchProducts();
+                              } else {
+                                const data = await res.json();
+                                alert(data.error || 'Erreur lors de la suppression');
+                              }
+                            }
+                          }}
+                        >
+                          <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>
