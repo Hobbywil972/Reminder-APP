@@ -121,8 +121,18 @@ export default async function handler(req, res) {
     if (!id) {
       return res.status(400).json({ error: 'ID manquant' });
     }
-    await prisma.contract.delete({ where: { id } });
-    return res.status(204).end();
+    try {
+      // Supprimer les liens ContractProduct avant de supprimer le contrat (évite les erreurs de contrainte)
+      await prisma.contractProduct.deleteMany({ where: { contractId: id } });
+      await prisma.contract.delete({ where: { id } });
+      return res.status(204).end();
+    } catch (e) {
+      console.error('Erreur suppression contrat:', e);
+      if (e.code === 'P2025') {
+        return res.status(404).json({ error: "Contrat introuvable ou déjà supprimé" });
+      }
+      return res.status(500).json({ error: e.message || "Erreur serveur lors de la suppression" });
+    }
   }
 
   res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
