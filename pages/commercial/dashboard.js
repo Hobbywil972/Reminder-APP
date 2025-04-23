@@ -246,7 +246,7 @@ export default function CommercialDashboard({ user }) {
           </div>
         </header>
         <div style={{ padding: '0 40px 40px 40px' }}>
-          {section === 'dashboard' && <CommercialDashboardWidgets />}
+          {section === 'dashboard' && <CommercialDashboardWidgets setSection={setSection} />}
           {section === 'clients' && <ClientsSection user={user} />}
           {section === 'products' && <ProductsSectionWrapper user={user} />}
           {section === 'contracts' && <ContractsSection />}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-export default function CommercialDashboardWidgets() {
+import { useRouter } from 'next/router';
+
+export default function CommercialDashboardWidgets({ setSection }) {
   const [stats, setStats] = useState({ clients: 0, contracts: 0, expiring: 0, loading: true });
 
   useEffect(() => {
@@ -42,15 +44,15 @@ export default function CommercialDashboardWidgets() {
     <section style={{ marginTop: 40 }}>
       <h2 style={{ marginBottom: 32 }}>Tableau de bord</h2>
       <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-        <WidgetCard label="Clients" value={stats.clients} color="#51cf66" icon="👥" />
-        <WidgetCard label="Contrats" value={stats.contracts} color="#339af0" icon="📄" />
+        <WidgetCard label="Clients" value={stats.clients} color="#51cf66" icon="👥" onClick={() => setSection('clients')} />
+        <WidgetCard label="Contrats" value={stats.contracts} color="#339af0" icon="📄" onClick={() => setSection('contracts')} />
         <WidgetCard label="Contrats à échéance < 30j" value={stats.expiring} color="#fab005" icon="⏰" />
       </div>
     </section>
   );
 }
 
-function WidgetCard({ label, value, color, icon }) {
+function WidgetCard({ label, value, color, icon, onClick }) {
   return (
     <div
       style={{
@@ -67,6 +69,7 @@ function WidgetCard({ label, value, color, icon }) {
         cursor: 'pointer',
         marginBottom: 16,
       }}
+      onClick={onClick}
       onMouseOver={e => {
         e.currentTarget.style.transform = 'translateY(-4px) scale(1.03)';
         e.currentTarget.style.boxShadow = '0 12px 32px #00b3e648';
