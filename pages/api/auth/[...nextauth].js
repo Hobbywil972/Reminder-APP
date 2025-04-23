@@ -37,29 +37,34 @@ export const authOptions = {
         password: { label: 'Mot de passe', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('[AUTH] Tentative connexion', credentials);
+  try {
+    console.log('[AUTH] Tentative connexion', credentials);
 
-        if (!credentials?.email || !credentials?.password) {
-          console.log('[AUTH] Credentials manquants');
-          return null;
-        }
-        // Vérification superadmin hors base
-        if (superadmin && credentials.email === superadmin.email) {
-          const isSuperValid = await bcrypt.compare(credentials.password, superadmin.passwordHash);
-          console.log('[AUTH] Superadmin?', isSuperValid);
-          if (isSuperValid) {
-            return { id: 'superadmin', name: 'Superadmin', email: superadmin.email, role: 'SUPERADMIN' };
-          }
-        }
-        // Authentification classique via Prisma
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        console.log('[AUTH] User trouvé ?', !!user);
-        if (!user) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        console.log('[AUTH] Password valide ?', isValid);
-        if (!isValid) return null;
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
-      },
+    if (!credentials?.email || !credentials?.password) {
+      console.log('[AUTH] Credentials manquants');
+      return null;
+    }
+    // Vérification superadmin hors base
+    if (superadmin && credentials.email === superadmin.email) {
+      const isSuperValid = await bcrypt.compare(credentials.password, superadmin.passwordHash);
+      console.log('[AUTH] Superadmin?', isSuperValid);
+      if (isSuperValid) {
+        return { id: 'superadmin', name: 'Superadmin', email: superadmin.email, role: 'SUPERADMIN' };
+      }
+    }
+    // Authentification classique via Prisma
+    const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+    console.log('[AUTH] User trouvé ?', !!user);
+    if (!user) return null;
+    const isValid = await bcrypt.compare(credentials.password, user.password);
+    console.log('[AUTH] Password valide ?', isValid);
+    if (!isValid) return null;
+    return { id: user.id, name: user.name, email: user.email, role: user.role };
+  } catch (err) {
+    console.error('[AUTH] Erreur authorize:', err);
+    throw err;
+  }
+},
     }),
   ],
   pages: {
