@@ -18,7 +18,12 @@ export default async function handler(req, res) {
       await prisma.product.delete({ where: { id: parseInt(id, 10) } });
       return res.status(204).end();
     } catch (e) {
-      return res.status(404).json({ error: "Produit introuvable ou déjà supprimé" });
+      console.error('Erreur suppression produit:', e);
+      if (e.code === 'P2025') {
+        // Prisma: Record to delete does not exist.
+        return res.status(404).json({ error: "Produit introuvable ou déjà supprimé" });
+      }
+      return res.status(500).json({ error: e.message || "Erreur serveur lors de la suppression" });
     }
   }
 
