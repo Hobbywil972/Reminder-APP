@@ -234,44 +234,6 @@ export default function ProductsSection({ user }) {
                             width: 140,
                             letterSpacing: 1,
                             display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            textTransform: 'uppercase',
-                          }}
-                          onMouseOver={e => {
-                            e.currentTarget.style.background = 'linear-gradient(90deg, #c9001a 60%, #ffb347 100%)';
-                            e.currentTarget.style.boxShadow = '0 6px 18px #ff495760';
-                          }}
-                          onMouseOut={e => {
-                            e.currentTarget.style.background = 'linear-gradient(90deg, #ff4957 60%, #ffb347 100%)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px #ff495740';
-                          }}
-                          onClick={async () => {
-                            if (window.confirm('Confirmer la suppression de ce produit ?')) {
-                              const res = await fetch('/api/admin/products', {
-                                method: 'DELETE',
-                                credentials: 'include',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ id: product.id }),
-                              });
-                              if (res.ok) {
-                                fetchProducts();
-                              } else {
-                                let message = 'Erreur lors de la suppression';
-                                try {
-                                  const data = await res.json();
-                                  message = data.error || message;
-                                } catch (e) {
-                                  // Réponse vide (ex: 204), on garde le message générique
-                                }
-                                alert(message);
-                              }
-                            }
-                          }}
-                        >
-                          <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
-                        </button>
                       </>
                     )}
                   </td>
