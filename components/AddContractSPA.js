@@ -5,10 +5,14 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
   // Alerte renouvellement (mois avant fin)
   const [renewalAlertMonths, setRenewalAlertMonths] = useState(initialContract ? initialContract.renewalAlertMonths || 1 : 1);
   const [clientId, setClientId] = useState(initialContract ? initialContract.clientId?.toString() || (initialContract.client?.id?.toString?.() || '') : '');
+  const [clientSearch, setClientSearch] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   // Nouvelle gestion : liste des produits ajoutés
   const [productsWithQuantities, setProductsWithQuantities] = useState(initialContract ? initialContract.contractProducts?.map(cp => ({ productId: cp.productId || cp.product?.id, quantity: cp.quantity })) || [] : []); // [{productId, quantity}]
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [startDate, setStartDate] = useState(initialContract ? initialContract.startDate?.slice(0,10) : '');
   const [duration, setDuration] = useState(initialContract ? initialContract.duration || 12 : 12); // en mois (par défaut 12)
 
@@ -148,18 +152,83 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           <span style={{ fontSize: 28, color: '#00b3e6', background: '#e6f7fa', borderRadius: '50%', padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📄</span>
           <h2 style={{ color: '#00b3e6', fontFamily: 'Montserrat, sans-serif', fontWeight: 800, fontSize: 24, margin: 0, letterSpacing: 1 }}>{initialContract ? 'Modifier le contrat' : 'Ajouter un contrat'}</h2>
         </div>
+        {/* Champ Client (autocomplete) */}
+        <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 2, position: 'relative', display: 'block', marginBottom: 18 }}>Client
+  <input
+    type="text"
+    value={clientSearch}
+    onChange={e => {
+      setClientSearch(e.target.value);
+      setClientId('');
+    }}
+    placeholder="Rechercher un client..."
+    style={{ marginTop: 8, padding: '10px 16px', border: '1.5px solid #cce8f6', borderRadius: 10, fontSize: 15, fontFamily: 'Montserrat, sans-serif', outline: 'none', width: '100%' }}
+    required={!clientId}
+    autoComplete="off"
+    onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+    onFocus={() => setShowSuggestions(true)}
+  />
+  {/* Suggestions */}
+  {clientSearch && showSuggestions && (
+    <div style={{ position: 'absolute', top: 56, left: 0, right: 0, background: '#fff', border: '1.5px solid #cce8f6', borderRadius: 10, zIndex: 10, maxHeight: 200, overflowY: 'auto', boxShadow: '0 2px 8px #00b3e620' }}>
+      {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 ? (
+        <div style={{ padding: 10, color: '#888' }}>Aucun client trouvé</div>
+      ) : (
+        clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
+          <div
+            key={c.id}
+            style={{ padding: 10, cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
+            onMouseDown={() => {
+              setClientId(c.id.toString());
+              setClientSearch(c.name);
+              setShowSuggestions(false);
+            }}
+          >
+            {c.name}
+          </div>
+        ))
+      )}
+    </div>
+  )}
+</label>
         {/* Bloc d’ajout de produits au contrat */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-          <select
-            value={selectedProductId}
-            onChange={e => setSelectedProductId(e.target.value)}
-            style={{ padding: 8, border: '1px solid #ccc', borderRadius: 4, minWidth: 180 }}
-          >
-            <option value="">Sélectionner un produit</option>
-            {products.map(p => (
-              <option key={p.id} value={p.id}>{p.reference} — {p.description}</option>
-            ))}
-          </select>
+          <div style={{ position: 'relative', minWidth: 180 }}>
+            <input
+              type="text"
+              value={productSearch}
+              onChange={e => {
+                setProductSearch(e.target.value);
+                setSelectedProductId('');
+              }}
+              placeholder="Rechercher un produit..."
+              style={{ padding: 8, border: '1px solid #ccc', borderRadius: 4, width: '100%' }}
+              autoComplete="off"
+              onBlur={() => setTimeout(() => setShowProductSuggestions(false), 120)}
+              onFocus={() => setShowProductSuggestions(true)}
+            />
+            {productSearch && showProductSuggestions && (
+              <div style={{ position: 'absolute', top: 40, left: 0, right: 0, background: '#fff', border: '1.5px solid #cce8f6', borderRadius: 10, zIndex: 10, maxHeight: 200, overflowY: 'auto', boxShadow: '0 2px 8px #00b3e620' }}>
+                {products.filter(p => (p.reference + ' ' + p.description).toLowerCase().includes(productSearch.toLowerCase())).length === 0 ? (
+                  <div style={{ padding: 10, color: '#888' }}>Aucun produit trouvé</div>
+                ) : (
+                  products.filter(p => (p.reference + ' ' + p.description).toLowerCase().includes(productSearch.toLowerCase())).map(p => (
+                    <div
+                      key={p.id}
+                      style={{ padding: 10, cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
+                      onMouseDown={() => {
+                        setSelectedProductId(p.id.toString());
+                        setProductSearch(p.reference + ' — ' + p.description);
+                        setShowProductSuggestions(false);
+                      }}
+                    >
+                      {p.reference} — {p.description}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <input
             type="number"
             min={1}
@@ -248,12 +317,44 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           </table>
         )}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 18 }}>
-          <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 2 }}>Client
-            <select value={clientId} onChange={e => setClientId(e.target.value)} style={{ marginTop: 8, padding: '10px 16px', border: '1.5px solid #cce8f6', borderRadius: 10, fontSize: 15, fontFamily: 'Montserrat, sans-serif', outline: 'none', width: '100%' }} required>
-              <option value=''>Sélectionner un client...</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
+          <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 2, position: 'relative' }}>Client
+  <input
+    type="text"
+    value={clientSearch}
+    onChange={e => {
+      setClientSearch(e.target.value);
+      setClientId('');
+    }}
+    placeholder="Rechercher un client..."
+    style={{ marginTop: 8, padding: '10px 16px', border: '1.5px solid #cce8f6', borderRadius: 10, fontSize: 15, fontFamily: 'Montserrat, sans-serif', outline: 'none', width: '100%' }}
+    required={!clientId}
+    autoComplete="off"
+    onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+    onFocus={() => setShowSuggestions(true)}
+  />
+  {/* Suggestions */}
+  {clientSearch && showSuggestions && (
+    <div style={{ position: 'absolute', top: 56, left: 0, right: 0, background: '#fff', border: '1.5px solid #cce8f6', borderRadius: 10, zIndex: 10, maxHeight: 200, overflowY: 'auto', boxShadow: '0 2px 8px #00b3e620' }}>
+      {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 ? (
+        <div style={{ padding: 10, color: '#888' }}>Aucun client trouvé</div>
+      ) : (
+        clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
+          <div
+            key={c.id}
+            style={{ padding: 10, cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
+            onMouseDown={() => {
+              setClientId(c.id.toString());
+              setClientSearch(c.name);
+              setShowSuggestions(false);
+            }}
+          >
+            {c.name}
+          </div>
+        ))
+      )}
+    </div>
+  )}
+</label>
           <label style={{ fontWeight: 'bold' }}>Adresse Email (pour l'alerte de renouvellement)</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="exemple@mail.com" style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
           <label style={{ fontWeight: 'bold' }}>Date de début de contrat</label>
