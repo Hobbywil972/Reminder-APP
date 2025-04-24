@@ -317,44 +317,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           </table>
         )}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 18 }}>
-          <label style={{ fontWeight: 600, fontSize: 16, marginBottom: 2, position: 'relative' }}>Client
-  <input
-    type="text"
-    value={clientSearch}
-    onChange={e => {
-      setClientSearch(e.target.value);
-      setClientId('');
-    }}
-    placeholder="Rechercher un client..."
-    style={{ marginTop: 8, padding: '10px 16px', border: '1.5px solid #cce8f6', borderRadius: 10, fontSize: 15, fontFamily: 'Montserrat, sans-serif', outline: 'none', width: '100%' }}
-    required={!clientId}
-    autoComplete="off"
-    onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-    onFocus={() => setShowSuggestions(true)}
-  />
-  {/* Suggestions */}
-  {clientSearch && showSuggestions && (
-    <div style={{ position: 'absolute', top: 56, left: 0, right: 0, background: '#fff', border: '1.5px solid #cce8f6', borderRadius: 10, zIndex: 10, maxHeight: 200, overflowY: 'auto', boxShadow: '0 2px 8px #00b3e620' }}>
-      {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 ? (
-        <div style={{ padding: 10, color: '#888' }}>Aucun client trouvé</div>
-      ) : (
-        clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
-          <div
-            key={c.id}
-            style={{ padding: 10, cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
-            onMouseDown={() => {
-              setClientId(c.id.toString());
-              setClientSearch(c.name);
-              setShowSuggestions(false);
-            }}
-          >
-            {c.name}
-          </div>
-        ))
-      )}
-    </div>
-  )}
-</label>
+
           <label style={{ fontWeight: 'bold' }}>Adresse Email (pour l'alerte de renouvellement)</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="exemple@mail.com" style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
           <label style={{ fontWeight: 'bold' }}>Date de début de contrat</label>
@@ -374,19 +337,12 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           )}
           <label style={{ fontWeight: 'bold' }}>Alerte de renouvellement (mois avant fin)</label>
           <input type="number" min={1} max={12} value={renewalAlertMonths} onChange={e => setRenewalAlertMonths(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
-          <label style={{ fontWeight: 'bold' }}>Statut</label>
-          <select value={status} onChange={e => setStatus(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }}>
-            <option value="EN_COURS">En cours</option>
-            <option value="EXPIRE">Expiré</option>
-            <option value="RESILIE">Résilié</option>
-          </select>
-        <button
+          <button
             type="submit"
             style={{
               background: initialContract
                 ? 'linear-gradient(90deg, #ffe066 60%, #ffeab3 100%)'
                 : 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
-              color: initialContract ? '#222' : '#fff',
               border: 'none',
               borderRadius: 12,
               padding: '15px 0',
