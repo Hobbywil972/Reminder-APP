@@ -7,6 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+  console.log('[CLIENT][SESSION]', session, status);
     if (status === 'loading') return; // Attendre que la session soit chargée
     if (session && (session.role === 'ADMIN' || session.role === 'SUPERADMIN')) {
       router.replace('/admin');
