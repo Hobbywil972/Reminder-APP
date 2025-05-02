@@ -89,7 +89,15 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+  if (account || user) {
+    // Nouvelle connexion ou refresh → régénère tout
+    token = {
+      ...token,
+      ...(user && { name: user.name, email: user.email, role: user.role, sub: user.id }),
+    };
+  }
+
       console.log('[NEXTAUTH][JWT CALLBACK] Avant:', { token, user });
       console.log('[AUTH][JWT] token:', token, 'user:', user);
       if (user) {
@@ -100,14 +108,17 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
+  console.log('[NEXTAUTH][SESSION CALLBACK] INPUT:', { session, token });
       console.log('[NEXTAUTH][SESSION CALLBACK] Avant:', { session, token });
       console.log('[AUTH][SESSION] session:', session, 'token:', token);
       if (token) {
         session.user = session.user || {};
         session.user.name = token.name;
         session.user.email = token.email;
-        session.role = token.role; // Ajout à la racine
-      }
+        session.role = token.role; // Added to the root of session
+    console.log('[NEXTAUTH][SESSION CALLBACK] OUTPUT:', session);
+    return session;
+  }
       console.log('[NEXTAUTH][SESSION CALLBACK] Après:', session);
       return session;
     },
