@@ -87,9 +87,9 @@ export const authOptions = {
       console.log('[AUTH][SESSION] session:', session, 'token:', token);
       if (token) {
         session.user = session.user || {};
-        session.user.role = token.role;
         session.user.name = token.name;
         session.user.email = token.email;
+        session.role = token.role; // Ajout à la racine
       }
       return session;
     },
