@@ -26,6 +26,7 @@ export const authOptions = {
         sameSite: "none", // Important pour Vercel/HTTPS
         path: "/",
         secure: true, // Toujours true sur Vercel
+        domain: '.vercel.app', // Ajouté pour propagation SSR/client sur Vercel
       },
     },
   },
