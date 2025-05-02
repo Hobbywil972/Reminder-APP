@@ -23,10 +23,10 @@ export const authOptions = {
         : "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: "none", // Important pour Vercel/HTTPS
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
-        secure: true, // Toujours true sur Vercel
-        domain: '.vercel.app', // Ajouté pour propagation SSR/client sur Vercel
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
       },
     },
   },

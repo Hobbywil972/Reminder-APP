@@ -20,9 +20,7 @@ export default function LogoutButton() {
       onClick={() => {
         signOut({ callbackUrl: '/auth/signin', redirect: true }).then(() => {
           clearNextAuthCookies();
-          setTimeout(() => {
-            window.location.reload(true);
-          }, 500);
+          window.location.href = '/auth/signin'; // Force un vrai reload de la page de login pour régénérer le CSRF
         });
       }}
       style={{
