@@ -37,6 +37,7 @@ export const authOptions = {
         password: { label: 'Mot de passe', type: 'password' },
       },
       async authorize(credentials) {
+  console.log('[NEXTAUTH][AUTHORIZE] Tentative avec credentials:', credentials);
   try {
     console.log('[AUTH] Tentative connexion', credentials);
 
@@ -76,14 +77,17 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log('[NEXTAUTH][JWT CALLBACK] Avant:', { token, user });
       console.log('[AUTH][JWT] token:', token, 'user:', user);
       if (user) {
         token.role = user.role;
         token.name = user.name;
       }
+      console.log('[NEXTAUTH][JWT CALLBACK] Après:', token);
       return token;
     },
     async session({ session, token }) {
+      console.log('[NEXTAUTH][SESSION CALLBACK] Avant:', { session, token });
       console.log('[AUTH][SESSION] session:', session, 'token:', token);
       if (token) {
         session.user = session.user || {};
@@ -91,6 +95,7 @@ export const authOptions = {
         session.user.email = token.email;
         session.role = token.role; // Ajout à la racine
       }
+      console.log('[NEXTAUTH][SESSION CALLBACK] Après:', session);
       return session;
     },
   },
