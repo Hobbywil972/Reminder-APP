@@ -76,21 +76,19 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log('[AUTH][JWT] token:', token, 'user:', user);
       if (user) {
         token.role = user.role;
         token.name = user.name;
-        console.log('[AUTH] JWT callback user:', user);
-      } else {
-        console.log('[AUTH] JWT callback token:', token);
       }
       return token;
     },
     async session({ session, token }) {
+      console.log('[AUTH][SESSION] session:', session, 'token:', token);
       if (token) {
         session.user = session.user || {};
         session.user.role = token.role;
         session.user.name = token.name;
-        console.log('[AUTH] SESSION callback session:', session, 'token:', token);
       }
       return session;
     },
