@@ -4,13 +4,13 @@ import { authOptions } from '../auth/[...nextauth]';
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session || (
-    req.method === 'GET' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
+    req.method === 'GET' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
   ) || (
-    req.method === 'POST' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
+    req.method === 'POST' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
   ) || (
-    req.method === 'PUT' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
+    req.method === 'PUT' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
   ) || (
-    req.method === 'DELETE' && !['ADMIN', 'SUPERADMIN'].includes(session.user.role)
+    req.method === 'DELETE' && !['ADMIN', 'SUPERADMIN'].includes(session.role)
   )) {
     return res.status(403).json({ error: 'Accès refusé' });
   }
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     dEnd.setMonth(dEnd.getMonth() + Number(duration));
     if (dEnd.getDate() !== dStart.getDate()) dEnd.setDate(0);
     console.log('[DEBUG-CONTRACT] Body reçu:', req.body, 'Session:', session?.user?.role);
-    if (session.user.role === 'SUPERADMIN') {
+    if (session.role === 'SUPERADMIN') {
       return res.status(400).json({ error: 'Veuillez quitter le mode superadmin pour ces opérations.' });
     }
     try {
@@ -72,10 +72,10 @@ export default async function handler(req, res) {
         }
       });
       // Envoi automatique du mail de confirmation pour ADMIN et COMMERCIAL
-      if (["ADMIN", "COMMERCIAL"].includes(session.user.role)) {
+      if (["ADMIN", "COMMERCIAL"].includes(session.role)) {
         try {
           const { sendConfirmationEmail } = await import('../../../utils/sendConfirmationEmail');
-          console.log('[EMAIL-CONFIRMATION] Tentative d’envoi à', contract.email, 'pour contrat', contract.id, 'Role:', session.user.role);
+          console.log('[EMAIL-CONFIRMATION] Tentative d’envoi à', contract.email, 'pour contrat', contract.id, 'Role:', session.role);
           await sendConfirmationEmail(contract);
           console.log('[EMAIL-CONFIRMATION] Envoi terminé pour', contract.email, 'contrat', contract.id);
         } catch (e) { console.error('[EMAIL-CONFIRMATION] Erreur envoi confirmation:', contract.email, contract.id, e); }

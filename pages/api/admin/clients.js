@@ -4,9 +4,9 @@ import { authOptions } from '../auth/[...nextauth]';
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session ||
-    (req.method === 'GET' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) ||
-    (req.method === 'POST' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) ||
-    (['PUT', 'DELETE'].includes(req.method) && !['ADMIN', 'SUPERADMIN'].includes(session.user.role))
+    (req.method === 'GET' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.role)) ||
+    (req.method === 'POST' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.role)) ||
+    (['PUT', 'DELETE'].includes(req.method) && !['ADMIN', 'SUPERADMIN'].includes(session.role))
   ) {
     return res.status(403).json({ error: 'Accès refusé' });
   }

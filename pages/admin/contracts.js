@@ -53,6 +53,21 @@ export default function ContractsSection({ user: userProp }) {
     return clientMatch && refMatch && dateMatch;
   });
 
+  // Fonction utilitaire pour parser le JSON et afficher les erreurs API
+  async function safeJson(res) {
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok) {
+      let message = 'Erreur API';
+      try {
+        const data = contentType.includes('application/json') ? await res.json() : null;
+        if (data && data.error) message = data.error;
+      } catch (e) {}
+      throw new Error(message);
+    }
+    if (!contentType.includes('application/json')) throw new Error('Session expirée ou accès refusé');
+    return res.json();
+  }
+
   const fetchAll = async () => {
     setLoading(true);
     const [contractsRes, clientsRes, productsRes] = await Promise.all([
@@ -60,20 +75,37 @@ export default function ContractsSection({ user: userProp }) {
       fetch('/api/admin/clients', { credentials: 'include' }),
       fetch('/api/admin/products', { credentials: 'include' })
     ]);
-function safeJson(res) {
-  const contentType = res.headers.get('content-type') || '';
-  if (!res.ok) throw new Error('Erreur API');
-  if (!contentType.includes('application/json')) throw new Error('Session expirée ou accès refusé');
-  return res.json();
-}
-
-const [contractsData, clientsData, productsData] = await Promise.all([
-  safeJson(contractsRes), safeJson(clientsRes), safeJson(productsRes)
-]);
-    setContracts(contractsData);
-    setClients(clientsData);
-    setProducts(productsData);
+    let contractsData = [], clientsData = [], productsData = [];
+    let errorContracts = '', errorClients = '', errorProducts = '';
+    try {
+      contractsData = await safeJson(contractsRes);
+    } catch (e) {
+      errorContracts = e.message || 'Erreur lors du chargement des contrats';
+    }
+    try {
+      clientsData = await safeJson(clientsRes);
+    } catch (e) {
+      errorClients = e.message || 'Erreur lors du chargement des clients';
+    }
+    try {
+      productsData = await safeJson(productsRes);
+    } catch (e) {
+      errorProducts = e.message || 'Erreur lors du chargement des produits';
+    }
+    setContracts(Array.isArray(contractsData) ? contractsData : []);
+    setClients(Array.isArray(clientsData) ? clientsData : []);
+    setProducts(Array.isArray(productsData) ? productsData : []);
     setLoading(false);
+    // Affichage d’erreur dans l’UI (stockage dans le state si besoin)
+    if (errorContracts || errorClients || errorProducts) {
+      setTimeout(() => {
+        alert([
+          errorContracts && `Contrats: ${errorContracts}`,
+          errorClients && `Clients: ${errorClients}`,
+          errorProducts && `Produits: ${errorProducts}`
+        ].filter(Boolean).join('\n'));
+      }, 200);
+    }
   };
 
   useEffect(() => { fetchAll(); }, []);

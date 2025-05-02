@@ -13,7 +13,7 @@ export default function ProductsSection({ user }) {
   const [sort, setSort] = useState({ key: 'reference', dir: 'asc' });
 
   // Tri et filtrage produits
-  const sortedProducts = [...products].sort((a, b) => {
+  const sortedProducts = [...(Array.isArray(products) ? products : [])].sort((a, b) => {
     let aVal = a[sort.key];
     let bVal = b[sort.key];
     if (typeof aVal === 'string') aVal = aVal.toLowerCase();
