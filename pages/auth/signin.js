@@ -1,11 +1,16 @@
 import { getCsrfToken } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function Login({ csrfToken }) {
+export default function Login() {
+  const [csrfToken, setCsrfToken] = useState(null);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    getCsrfToken().then(token => setCsrfToken(token));
+  }, []);
+
   if (!csrfToken) {
-    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Erreur de sécurité : CSRF Token manquant. Veuillez réessayer plus tard.</div>;
+    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Chargement du token de sécurité...</div>;
   }
 
   return (
@@ -31,7 +36,7 @@ export default function Login({ csrfToken }) {
       }}>
         <h2 style={{ color: '#444', fontWeight: 700, marginBottom: 24 }}>Connexion</h2>
         <form method="post" action="/api/auth/callback/credentials" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <input name="csrfToken" type="hidden" defaultValue={csrfToken} />
+          <input name="csrfToken" type="hidden" value={csrfToken} />
           <input
             name="email"
             type="email"
@@ -88,16 +93,3 @@ export default function Login({ csrfToken }) {
 }
 
 
-export async function getServerSideProps(context) {
-  const csrfToken = await getCsrfToken({
-    req: {
-      headers: context.req.headers,
-      cookies: context.req.cookies,
-    }
-  });
-  return {
-    props: {
-      csrfToken: csrfToken ?? null,
-    },
-  };
-}
