@@ -22,7 +22,7 @@ export async function getServerSideProps(context) {
         orderBy: { name: 'asc' },
       })
     : [];
-  return { props: { user: session.user, users } };
+  return { props: { user: session.role } };
 }
 
 function UsersSection({ users, user }) {

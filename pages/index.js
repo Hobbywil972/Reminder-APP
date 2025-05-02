@@ -8,9 +8,9 @@ export default function Home() {
 
   useEffect(() => {
     if (status === 'loading') return; // Attendre que la session soit chargée
-    if (session?.role === 'ADMIN' || session?.role === 'SUPERADMIN') {
+    if (session.role === 'ADMIN' || session.role === 'SUPERADMIN') {
       router.replace('/admin');
-    } else if (session?.role === 'COMMERCIAL') {
+    } else if (session.role === 'COMMERCIAL') {
       router.replace('/commercial');
     } else if (status === 'unauthenticated' || !session) {
       router.replace('/api/auth/signin');
