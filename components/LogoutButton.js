@@ -20,8 +20,8 @@ export default function LogoutButton() {
       onClick={() => {
         signOut({ callbackUrl: '/auth/signin', redirect: true });
         setTimeout(() => {
-          document.cookie = '__Secure-next-auth.session-token=; Path=/; Secure; SameSite=None; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        }, 500);
+          window.location.reload(true);
+        }, 750);
       }}
       style={{
         background: '#fff',
