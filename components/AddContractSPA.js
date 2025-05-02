@@ -322,14 +322,15 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="exemple@mail.com" style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
           <label style={{ fontWeight: 'bold' }}>Date de début de contrat</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
-          <label style={{ fontWeight: 'bold' }}>Durée du contrat</label>
-          <select value={duration} onChange={e => setDuration(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }}>
-            <option value={12}>12 mois</option>
-            <option value={24}>24 mois</option>
-            <option value={36}>36 mois</option>
-            <option value={48}>48 mois</option>
-            <option value={60}>60 mois</option>
-          </select>
+          <label style={{ fontWeight: 'bold' }}>Durée du contrat (en mois)</label>
+<input
+  type="number"
+  min={1}
+  value={duration}
+  onChange={e => setDuration(e.target.value)}
+  style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }}
+  placeholder="Durée en mois"
+/>
           {startDate && duration && (
             <div style={{ color: '#333', marginTop: 4 }}>
               Date de fin calculée : <b>{computedEndDate}</b>
