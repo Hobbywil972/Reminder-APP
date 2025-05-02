@@ -1,9 +1,11 @@
-import { getSession, signOut } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../api/auth/[...nextauth]';
+import { signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context);
+  const session = await getServerSession(context.req, context.res, authOptions);
   if (!session) {
     return {
       redirect: {
@@ -14,7 +16,7 @@ export async function getServerSideProps(context) {
   }
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
-  const users = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN'
+  const users = session.role === 'ADMIN' || session.role === 'SUPERADMIN'
     ? await prisma.user.findMany({
         select: { id: true, name: true, email: true, role: true },
         orderBy: { name: 'asc' },
