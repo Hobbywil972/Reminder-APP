@@ -29,6 +29,18 @@ export const authOptions = {
         domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
       },
     },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Host-next-auth.csrf-token"
+        : "next-auth.csrf-token",
+      options: {
+        httpOnly: false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // PAS de domain pour __Host- cookies !
+      },
+    },
   },
   providers: [
     CredentialsProvider({
