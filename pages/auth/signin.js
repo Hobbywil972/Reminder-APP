@@ -89,7 +89,12 @@ export default function Login({ csrfToken }) {
 
 
 export async function getServerSideProps(context) {
-  const csrfToken = await getCsrfToken(context);
+  const csrfToken = await getCsrfToken({
+    req: {
+      headers: context.req.headers,
+      cookies: context.req.cookies,
+    }
+  });
   return {
     props: {
       csrfToken: csrfToken ?? null,
