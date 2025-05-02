@@ -6,8 +6,6 @@ function clearNextAuthCookies() {
   const cookieNames = [
     'next-auth.session-token',
     '__Secure-next-auth.session-token',
-    'next-auth.csrf-token',
-    '__Secure-next-auth.csrf-token',
     'next-auth.callback-url'
   ];
   cookieNames.forEach(name => {
