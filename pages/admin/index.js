@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../api/auth/[...nextauth]';
 import { signOut } from 'next-auth/react';
+import LogoutButton from '../../components/LogoutButton';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
@@ -22,7 +23,7 @@ export async function getServerSideProps(context) {
         orderBy: { name: 'asc' },
       })
     : [];
-  return { props: { user: session.role } };
+  return { props: { user: session.role, users } };
 }
 
 function UsersSection({ users, user }) {
@@ -499,7 +500,29 @@ export default function AdminDashboard({ user, users }) {
               </a>
             </li>
             <li>
-              <button onClick={() => signOut({ callbackUrl: '/auth/signin' })} style={{ background: '#fff', color: '#00b3e6', border: '1.5px solid #cce8f6', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', borderRadius: 12, marginTop: 32, fontWeight: 700, fontSize: 17, transition: 'background 0.15s' }}>
+              <button
+                onClick={() => {
+                  signOut({ callbackUrl: '/auth/signin', redirect: true }).then(() => {
+                    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+                      const cookieNames = [
+                        'next-auth.session-token',
+                        '__Secure-next-auth.session-token',
+                        'next-auth.csrf-token',
+                        '__Secure-next-auth.csrf-token',
+                        'next-auth.callback-url'
+                      ];
+                      cookieNames.forEach(name => {
+                        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+                      });
+                    }
+                    setTimeout(() => {
+                      window.location.reload(true);
+                    }, 500);
+                  });
+                }}
+                style={{ background: '#fff', color: '#00b3e6', border: '1.5px solid #cce8f6', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', borderRadius: 12, marginTop: 32, fontWeight: 700, fontSize: 17, transition: 'background 0.15s' }}
+              >
                 <span role="img" aria-label="logout" style={{ marginRight: 12 }}>🚪</span> Déconnexion
               </button>
             </li>
