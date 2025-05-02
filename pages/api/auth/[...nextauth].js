@@ -26,7 +26,7 @@ export const authOptions = {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? "reminder-app-nine-pi.vercel.app" : undefined,
+
       },
     },
     csrfToken: {
