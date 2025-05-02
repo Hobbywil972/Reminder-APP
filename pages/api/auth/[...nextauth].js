@@ -23,9 +23,9 @@ export const authOptions = {
         : "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none", // Important pour Vercel/HTTPS
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: true, // Toujours true sur Vercel
       },
     },
   },
@@ -72,6 +72,7 @@ export const authOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
   callbacks: {
     async jwt({ token, user }) {
