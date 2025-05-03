@@ -109,6 +109,8 @@ export const authOptions = {
         token.name = user.name;
         token.email = user.email;
         token.role = user.role;
+        // Log explicite du rôle ajouté au token
+        console.log(`[AUTH][JWT] Role added to token: ${token.role}`);
       }
       console.log('[AUTH][JWT] Returning token:', token);
       return token;
@@ -116,15 +118,17 @@ export const authOptions = {
     async session({ session, token }) {
       // Copier les infos pertinentes du token JWT vers l'objet session
       if (token && session.user) {
-        console.log('[AUTH][SESSION] Enriching session with token info:', token);
+         console.log('[AUTH][SESSION] Enriching session with token info:', token);
         session.user.id = token.id; // Assurez-vous que l'ID est bien dans le token
         session.user.name = token.name;
         session.user.email = token.email;
         session.role = token.role; // Peut-être session.user.role selon votre structure
+        // Log explicite du rôle ajouté à la session
+        console.log(`[AUTH][SESSION] Role added to session: ${session.role}`);
       } else {
-        console.log('[AUTH][SESSION] No token or session.user found, returning original session.');
+          console.log('[AUTH][SESSION] No token or session.user found, returning original session.');
       }
-      console.log('[AUTH][SESSION] Returning session:', session);
+        console.log('[AUTH][SESSION] Returning session:', session);
       return session;
     },
   },

@@ -21,6 +21,7 @@ export default function DashboardDispatcher() {
 
     // Redirection basée sur le rôle
     const userRole = session.role;
+    console.log(`[DashboardDispatcher] Session status: ${status}, Role found: ${userRole}`);
     console.log(`[DashboardDispatcher] User authenticated with role: ${userRole}. Redirecting...`);
 
     if (userRole === 'ADMIN') {
