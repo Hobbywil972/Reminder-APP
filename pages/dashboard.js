@@ -26,8 +26,8 @@ export default function DashboardDispatcher() {
     if (userRole === 'ADMIN') {
       router.replace('/admin');
     } else if (userRole === 'COMMERCIAL') {
-      // Utiliser le chemin trouvé via list_dir
-      router.replace('/commercial');
+      // Rediriger directement vers la page finale du dashboard commercial
+      router.replace('/commercial/dashboard');
     } else {
       // Fallback pour d'autres rôles ou si le rôle est manquant
       console.warn(`[DashboardDispatcher] Rôle utilisateur inconnu ou manquant: ${userRole}. Redirection vers la page d'accueil.`);
