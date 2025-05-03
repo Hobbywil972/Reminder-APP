@@ -18,26 +18,28 @@ if (fs.existsSync(SUPERADMIN_CONFIG_PATH)) {
 export const authOptions = {
   cookies: {
     sessionToken: {
-      // Temporairement utiliser le nom de dev
-      name: "next-auth.session-token",
+      // Rétablir la configuration originale
+      name: process.env.NODE_ENV === "production"
+        ? "next-auth.session-token" // NOTE: Vercel utilise souvent __Secure- préfixe par défaut
+        : "next-auth.session-token",
       options: {
         httpOnly: true,
-        // Temporairement utiliser sameSite: 'lax'
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
-        // Conserver secure: true en production car Vercel est HTTPS
         secure: process.env.NODE_ENV === "production",
       },
     },
     csrfToken: {
-      // Temporairement utiliser le nom de dev (sans __Host-)
-      name: "next-auth.csrf-token",
+      // Rétablir la configuration originale avec __Host-
+      name: process.env.NODE_ENV === "production"
+        ? "__Host-next-auth.csrf-token"
+        : "next-auth.csrf-token",
       options: {
-        httpOnly: false, // Doit être false pour CSRF
-        // Temporairement utiliser sameSite: 'lax'
-        sameSite: "lax",
+        // Correction : CSRF doit être accessible par le script client
+        httpOnly: false,
+        // Correction : Rétablir sameSite: 'none' pour la production comme initialement
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
-        // Conserver secure: true en production
         secure: process.env.NODE_ENV === "production",
       },
     },
@@ -50,35 +52,35 @@ export const authOptions = {
         password: { label: 'Mot de passe', type: 'password' },
       },
       async authorize(credentials) {
-  console.log('[NEXTAUTH][AUTHORIZE] Tentative avec credentials:', credentials);
-  try {
-    console.log('[AUTH] Tentative connexion', credentials);
+        console.log('[NEXTAUTH][AUTHORIZE] Tentative avec credentials:', credentials);
+        try {
+          console.log('[AUTH] Tentative connexion', credentials);
 
-    if (!credentials?.email || !credentials?.password) {
-      console.log('[AUTH] Credentials manquants');
-      return null;
-    }
-    // Vérification superadmin hors base
-    if (superadmin && credentials.email === superadmin.email) {
-      const isSuperValid = await bcrypt.compare(credentials.password, superadmin.passwordHash);
-      console.log('[AUTH] Superadmin?', isSuperValid);
-      if (isSuperValid) {
-        return { id: 'superadmin', name: 'Superadmin', email: superadmin.email, role: 'SUPERADMIN' };
-      }
-    }
-    // Authentification classique via Prisma
-    const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-    console.log('[AUTH] User trouvé ?', !!user);
-    if (!user) return null;
-    const isValid = await bcrypt.compare(credentials.password, user.password);
-    console.log('[AUTH] Password valide ?', isValid);
-    if (!isValid) return null;
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
-  } catch (err) {
-    console.error('[AUTH] Erreur authorize:', err);
-    throw err;
-  }
-},
+          if (!credentials?.email || !credentials?.password) {
+            console.log('[AUTH] Credentials manquants');
+            return null;
+          }
+          // Vérification superadmin hors base
+          if (superadmin && credentials.email === superadmin.email) {
+            const isSuperValid = await bcrypt.compare(credentials.password, superadmin.passwordHash);
+            console.log('[AUTH] Superadmin?', isSuperValid);
+            if (isSuperValid) {
+              return { id: 'superadmin', name: 'Superadmin', email: superadmin.email, role: 'SUPERADMIN' };
+            }
+          }
+          // Authentification classique via Prisma
+          const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+          console.log('[AUTH] User trouvé ?', !!user);
+          if (!user) return null;
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          console.log('[AUTH] Password valide ?', isValid);
+          if (!isValid) return null;
+          return { id: user.id, name: user.name, email: user.email, role: user.role };
+        } catch (err) {
+          console.error('[AUTH] Erreur authorize:', err);
+          throw err;
+        }
+      },
     }),
   ],
   pages: {
@@ -89,37 +91,30 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-  if (account || user) {
-    // Nouvelle connexion ou refresh → régénère tout
-    token = {
-      ...token,
-      ...(user && { name: user.name, email: user.email, role: user.role, sub: user.id }),
-    };
-  }
-
-      console.log('[NEXTAUTH][JWT CALLBACK] Avant:', { token, user });
-      console.log('[AUTH][JWT] token:', token, 'user:', user);
+    async jwt({ token, user }) {
+      // Si 'user' existe (connexion ou refresh initial), on ajoute ses infos au token
       if (user) {
-        token.role = user.role;
+        console.log('[AUTH][JWT] Enriching token with user info:', user);
+        token.id = user.id;
         token.name = user.name;
+        token.email = user.email;
+        token.role = user.role;
       }
-      console.log('[NEXTAUTH][JWT CALLBACK] Après:', token);
+      console.log('[AUTH][JWT] Returning token:', token);
       return token;
     },
     async session({ session, token }) {
-  console.log('[NEXTAUTH][SESSION CALLBACK] INPUT:', { session, token });
-      console.log('[NEXTAUTH][SESSION CALLBACK] Avant:', { session, token });
-      console.log('[AUTH][SESSION] session:', session, 'token:', token);
-      if (token) {
-        session.user = session.user || {};
+      // Copier les infos pertinentes du token JWT vers l'objet session
+      if (token && session.user) {
+        console.log('[AUTH][SESSION] Enriching session with token info:', token);
+        session.user.id = token.id; // Assurez-vous que l'ID est bien dans le token
         session.user.name = token.name;
         session.user.email = token.email;
-        session.role = token.role; // Added to the root of session
-    console.log('[NEXTAUTH][SESSION CALLBACK] OUTPUT:', session);
-    return session;
-  }
-      console.log('[NEXTAUTH][SESSION CALLBACK] Après:', session);
+        session.role = token.role; // Peut-être session.user.role selon votre structure
+      } else {
+        console.log('[AUTH][SESSION] No token or session.user found, returning original session.');
+      }
+      console.log('[AUTH][SESSION] Returning session:', session);
       return session;
     },
   },
