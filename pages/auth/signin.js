@@ -65,6 +65,8 @@ export default function Login() {
         <h2 style={{ color: '#444', fontWeight: 700, marginBottom: 24 }}>Connexion</h2>
         <form method="post" action="/api/auth/callback/credentials" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <input name="csrfToken" type="hidden" value={csrfToken} />
+          {/* Ajout explicite du callbackUrl */}
+          <input name="callbackUrl" type="hidden" value="/admin" />
           <input
             name="email"
             type="email"
