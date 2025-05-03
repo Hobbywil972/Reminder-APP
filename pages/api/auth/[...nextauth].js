@@ -18,27 +18,27 @@ if (fs.existsSync(SUPERADMIN_CONFIG_PATH)) {
 export const authOptions = {
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === "production"
-        ? "next-auth.session-token"
-        : "next-auth.session-token",
+      // Temporairement utiliser le nom de dev
+      name: "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // Temporairement utiliser sameSite: 'lax'
+        sameSite: "lax",
         path: "/",
+        // Conserver secure: true en production car Vercel est HTTPS
         secure: process.env.NODE_ENV === "production",
-
       },
     },
     csrfToken: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Host-next-auth.csrf-token"
-        : "next-auth.csrf-token",
+      // Temporairement utiliser le nom de dev (sans __Host-)
+      name: "next-auth.csrf-token",
       options: {
-        httpOnly: false,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        httpOnly: false, // Doit être false pour CSRF
+        // Temporairement utiliser sameSite: 'lax'
+        sameSite: "lax",
         path: "/",
+        // Conserver secure: true en production
         secure: process.env.NODE_ENV === "production",
-        // PAS de domain pour __Host- cookies !
       },
     },
   },
