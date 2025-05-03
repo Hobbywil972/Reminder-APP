@@ -7,6 +7,7 @@ import { SortableTh, useSortableData } from '../../components/SortableTh';
 import CommercialDashboardWidgets from './CommercialDashboardWidgets';
 import AddClientSPA from '../../components/AddClientSPA';
 import AddProductSPA from '../../components/AddProductSPA';
+import { useSession } from 'next-auth/react';
 
 function ClientsSection({ user }) {
   const [clients, setClients] = useState([]);
@@ -106,26 +107,40 @@ function ProductsSectionWrapper({ user }) {
   return <ProductsSection key={refreshKey} user={user} onAddProduct={() => setMode('add')} />;
 }
 
-export async function getServerSideProps(context) {
-  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
-
-  // Simplification: Vérifier seulement si l'utilisateur est connecté.
-  // Le rôle est déjà filtré par /dashboard.js
-  if (!token) {
-    console.log('[CommercialDashboard] User not authenticated in getServerSideProps, redirecting to signin.');
-    return {
-      redirect: {
-        destination: '/auth/signin',
-        permanent: false,
-      },
-    };
-  }
-  return { props: { user: { name: token.name, email: token.email, role: token.role } } };
-}
-
-export default function CommercialDashboard({ user }) {
-  const [section, setSection] = useState('dashboard');
+export default function CommercialDashboard() {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [section, setSection] = useState('dashboard'); // 'dashboard', 'clients', 'products', 'contracts'
+
+  useEffect(() => {
+    // Si non authentifié après chargement, rediriger vers signin
+    if (status === 'unauthenticated') {
+       console.log('[CommercialDashboard][Client] User unauthenticated, redirecting to signin.');
+      router.replace('/auth/signin');
+    }
+    // Si authentifié mais pas le bon rôle (sécurité supplémentaire), rediriger
+    // Note : Ceci ne devrait pas arriver grâce à /dashboard.js, mais c'est une bonne pratique
+    if (status === 'authenticated' && session?.role !== 'COMMERCIAL') {
+        console.warn(`[CommercialDashboard][Client] User authenticated but incorrect role (${session?.role}), redirecting.`);
+        // Rediriger vers une page d'erreur ou /dashboard ?
+        router.replace('/dashboard'); // Ou une page '/unauthorized'
+    }
+  }, [status, session, router]);
+
+  // Afficher un chargement pendant que la session est vérifiée
+  if (status === 'loading') {
+    return <p>Chargement de la session...</p>;
+  }
+
+  // Ne pas rendre le contenu si non authentifié ou mauvais rôle (redirection en cours)
+  if (status !== 'authenticated' || session?.role !== 'COMMERCIAL') {
+      // Afficher null ou un message pendant que la redirection via useEffect se fait
+      return null; 
+  }
+
+  // Si authentifié et bon rôle, afficher le dashboard
+  // Utiliser session.user pour les infos utilisateur
+  const user = session.user;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Montserrat, Segoe UI, Arial, sans-serif', background: '#f6fcff' }}>
