@@ -4,13 +4,41 @@ import { useEffect, useState } from 'react';
 export default function Login() {
   const [csrfToken, setCsrfToken] = useState(null);
   const [error, setError] = useState(null);
+  const [loadingToken, setLoadingToken] = useState(true);
 
   useEffect(() => {
-    getCsrfToken().then(token => setCsrfToken(token));
+    console.log('[SignIn] Attempting to get CSRF token...');
+    setLoadingToken(true);
+    setError(null);
+    getCsrfToken()
+      .then(token => {
+        if (token) {
+          console.log('[SignIn] CSRF token received:', token);
+          setCsrfToken(token);
+        } else {
+          console.error('[SignIn] CSRF token received but is null or undefined.');
+          setError('Erreur interne lors de la récupération du token.');
+        }
+      })
+      .catch(err => {
+        console.error('[SignIn] Error fetching CSRF token:', err);
+        setError(`Erreur lors de la récupération du token: ${err.message || 'Inconnue'}`);
+      })
+      .finally(() => {
+        setLoadingToken(false);
+      });
   }, []);
 
+  if (loadingToken) {
+    return <div style={{ color: 'blue', textAlign: 'center', marginTop: 40 }}>Chargement du token de sécurité...</div>;
+  }
+
+  if (error) {
+    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</div>;
+  }
+
   if (!csrfToken) {
-    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Chargement du token de sécurité...</div>;
+    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Impossible de charger le token de sécurité.</div>;
   }
 
   return (
@@ -81,7 +109,7 @@ export default function Login() {
             Se connecter
           </button>
         </form>
-        {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+        {/* Afficher l'erreur de connexion ici si nécessaire, distincte de l'erreur de token */}
       </div>
       <footer style={{ marginTop: 32, color: '#888', fontSize: 14, textAlign: 'center', lineHeight: 1.3 }}>
         <div style={{ fontWeight: 700, color: '#00b3e6', fontSize: 15, letterSpacing: 1 }}>ReminderAPP</div>
@@ -91,5 +119,3 @@ export default function Login() {
     </div>
   );
 }
-
-
