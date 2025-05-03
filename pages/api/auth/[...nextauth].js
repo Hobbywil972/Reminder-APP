@@ -71,14 +71,22 @@ export const authOptions = {
           // Authentification classique via Prisma
           const user = await prisma.user.findUnique({ where: { email: credentials.email } });
           console.log('[AUTH] User trouvé ?', !!user);
-          if (!user) return null;
+          if (!user) {
+              console.log('[AUTH] User not found in DB');
+              return null;
+          }
           const isValid = await bcrypt.compare(credentials.password, user.password);
           console.log('[AUTH] Password valide ?', isValid);
-          if (!isValid) return null;
+          if (!isValid) {
+              console.log('[AUTH] Invalid password');
+              return null;
+          }
+          console.log('[AUTH] Credentials valid, returning user object:', { id: user.id, name: user.name, email: user.email, role: user.role });
           return { id: user.id, name: user.name, email: user.email, role: user.role };
         } catch (err) {
-          console.error('[AUTH] Erreur authorize:', err);
-          throw err;
+          console.error('[AUTH] Erreur dans authorize:', err); // Log l'erreur
+          // Retourner null pour indiquer un échec d'authentification à NextAuth
+          return null;
         }
       },
     }),
