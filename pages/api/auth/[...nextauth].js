@@ -52,6 +52,8 @@ export const authOptions = {
         password: { label: 'Mot de passe', type: 'password' },
       },
       async authorize(credentials) {
+        // Log d'entrée pour s'assurer que la fonction est appelée
+        console.log(`[AUTH][AUTHORIZE ENTRY] Fonction authorize appelée avec email: ${credentials?.email}`);
         console.log('[NEXTAUTH][AUTHORIZE] Tentative avec credentials:', credentials);
         try {
           console.log('[AUTH] Tentative connexion', credentials);
