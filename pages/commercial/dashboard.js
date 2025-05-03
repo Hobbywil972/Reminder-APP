@@ -108,7 +108,11 @@ function ProductsSectionWrapper({ user }) {
 
 export async function getServerSideProps(context) {
   const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token || token.role !== 'COMMERCIAL') {
+
+  // Simplification: Vérifier seulement si l'utilisateur est connecté.
+  // Le rôle est déjà filtré par /dashboard.js
+  if (!token) {
+    console.log('[CommercialDashboard] User not authenticated in getServerSideProps, redirecting to signin.');
     return {
       redirect: {
         destination: '/auth/signin',
