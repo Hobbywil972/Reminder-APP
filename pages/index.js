@@ -9,10 +9,12 @@ export default function Home() {
   useEffect(() => {
   console.log('[CLIENT][SESSION]', session, status);
     if (status === 'loading') return; // Attendre que la session soit chargée
-    if (session && (session.role === 'ADMIN' || session.role === 'SUPERADMIN')) {
+    if (session && session.user && (session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN')) {
       router.replace('/admin');
-    } else if (session && session.role === 'COMMERCIAL') {
+    } else if (session && session.user && session.user.role === 'COMMERCIAL') {
       router.replace('/commercial');
+    } else if (session && session.user && session.user.role === 'SOUSCRIPTEUR') {
+      router.replace('/souscripteur/dashboard');
     } else if (status === 'unauthenticated' || !session) {
       router.replace('/api/auth/signin');
     }

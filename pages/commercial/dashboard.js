@@ -120,8 +120,8 @@ export default function CommercialDashboard() {
     }
     // Si authentifié mais pas le bon rôle (sécurité supplémentaire), rediriger
     // Note : Ceci ne devrait pas arriver grâce à /dashboard.js, mais c'est une bonne pratique
-    if (status === 'authenticated' && session?.role !== 'COMMERCIAL') {
-        console.warn(`[CommercialDashboard][Client] User authenticated but incorrect role (${session?.role}), redirecting.`);
+    if (status === 'authenticated' && session?.user?.role !== 'COMMERCIAL') {
+        console.log(`[CommercialDashboard][Client] User authenticated but incorrect role (${session.user?.role}), redirecting.`);
         // Rediriger vers une page d'erreur ou /dashboard ?
         router.replace('/dashboard'); // Ou une page '/unauthorized'
     }
@@ -133,7 +133,7 @@ export default function CommercialDashboard() {
   }
 
   // Ne pas rendre le contenu si non authentifié ou mauvais rôle (redirection en cours)
-  if (status !== 'authenticated' || session?.role !== 'COMMERCIAL') {
+  if (status !== 'authenticated' || session?.user?.role !== 'COMMERCIAL') {
       // Afficher null ou un message pendant que la redirection via useEffect se fait
       return null; 
   }
@@ -240,7 +240,6 @@ export default function CommercialDashboard() {
         <div style={{ marginTop: 'auto', width: '100%', padding: '0 0 18px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', opacity: 0.95, marginBottom: 2, letterSpacing: 1 }}>ReminderAPP</div>
           <div style={{ fontSize: 13, color: '#fff', opacity: 0.7, marginBottom: 1 }}>&copy; Willy GROMAT</div>
-          <div style={{ fontSize: 13, color: '#fff', opacity: 0.7 }}>v1.0</div>
         </div>
       </aside>
       {/* Main content modernisé */}

@@ -3,14 +3,14 @@ import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
-  if (!session || (
-    req.method === 'GET' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
+  if (!session || !session.user || ( // Vérifier aussi session.user
+    req.method === 'GET' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
   ) || (
-    req.method === 'POST' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
+    req.method === 'POST' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
   ) || (
-    req.method === 'PUT' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.role)
+    req.method === 'PUT' && !['ADMIN', 'COMMERCIAL', 'SUPERADMIN'].includes(session.user.role)
   ) || (
-    req.method === 'DELETE' && !['ADMIN', 'SUPERADMIN'].includes(session.role)
+    req.method === 'DELETE' && !['ADMIN', 'SUPERADMIN'].includes(session.user.role)
   )) {
     return res.status(403).json({ error: 'Accès refusé' });
   }
@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     const contracts = await prisma.contract.findMany({
       include: {
         client: { select: { id: true, name: true } },
+        user: { select: { name: true } }, // Inclure le nom du commercial
         contractProducts: {
           include: {
             product: { select: { id: true, reference: true, description: true } }
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { clientId, productsWithQuantities, startDate, status, email, renewalAlertMonths, duration } = req.body;
+    const { clientId, productsWithQuantities, startDate, status, email, renewalAlertMonths, duration, commentaire } = req.body;
     if (!clientId || !Array.isArray(productsWithQuantities) || productsWithQuantities.length === 0 || !startDate || !status || !email || !duration) {
       return res.status(400).json({ error: 'Champs obligatoires manquants' });
     }
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
     dEnd.setMonth(dEnd.getMonth() + Number(duration));
     if (dEnd.getDate() !== dStart.getDate()) dEnd.setDate(0);
     console.log('[DEBUG-CONTRACT] Body reçu:', req.body, 'Session:', session?.user?.role);
-    if (session.role === 'SUPERADMIN') {
+    if (session.user.role === 'SUPERADMIN') {
       return res.status(400).json({ error: 'Veuillez quitter le mode superadmin pour ces opérations.' });
     }
     try {
@@ -61,6 +62,7 @@ export default async function handler(req, res) {
           status,
           email: email || null,
           renewalAlertMonths: renewalAlertMonths ? Number(renewalAlertMonths) : null,
+          commentaire: commentaire || null,
 
           contractProducts: {
             create: productsWithQuantities.map(({ productId, quantity }) => ({ product: { connect: { id: productId } }, quantity }))
@@ -72,7 +74,7 @@ export default async function handler(req, res) {
         }
       });
       // Envoi automatique du mail de confirmation pour ADMIN et COMMERCIAL
-      if (["ADMIN", "COMMERCIAL"].includes(session.role)) {
+      if (["ADMIN", "COMMERCIAL"].includes(session.user.role)) {
         try {
           const { sendConfirmationEmail } = await import('../../../utils/sendConfirmationEmail');
           console.log('[EMAIL-CONFIRMATION] Tentative d’envoi à', contract.email, 'pour contrat', contract.id, 'Role:', session.role);
@@ -88,9 +90,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, clientId, productsWithQuantities, startDate, endDate, status, duration, renewalAlertMonths, email } = req.body;
-    if (!id || !clientId || !Array.isArray(productsWithQuantities) || productsWithQuantities.length === 0 || !startDate || !endDate || !status) {
-      return res.status(400).json({ error: 'Champs obligatoires manquants' });
+    const { id, clientId, productsWithQuantities, startDate, status, duration, renewalAlertMonths, email, commentaire } = req.body;
+    if (!id || !clientId || !Array.isArray(productsWithQuantities) || productsWithQuantities.length === 0 || !startDate || !status || !duration) {
+      return res.status(400).json({ error: 'Champs obligatoires manquants pour la mise à jour' });
     }
     // Ne vérifie pas de doublons ni de présence de référence produit par ligne, accepte plusieurs fois le même produit
     // Met à jour le contrat + les produits associés
@@ -103,9 +105,13 @@ export default async function handler(req, res) {
         renewalAlertMonths: renewalAlertMonths ? Number(renewalAlertMonths) : null,
         email: email || null,
         status,
+        commentaire: commentaire || null,
         contractProducts: {
           deleteMany: {},
-          create: productsWithQuantities.map(({ productId, quantity }) => ({ product: { connect: { id: productId } }, quantity })),
+          create: productsWithQuantities.map(({ productId, quantity }) => ({
+            quantity,
+            product: { connect: { id: productId } },
+          })),
         }
       },
       include: {

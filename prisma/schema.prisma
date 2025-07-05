@@ -1,6 +1,3 @@
-// Prisma schema pour Reminder-APP
-// Base PostgreSQL
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,103 +8,108 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   password  String
   name      String
-  role      Role     @default(COMMERCIAL)
-  createdAt DateTime @default(now())
-  reminders Reminder[]
-  logs      Log[]
+  role      Role       @default(COMMERCIAL)
+  createdAt DateTime   @default(now())
+  clientId  Int?
   contracts Contract[]
+  logs      Log[]
+  reminders Reminder[]
+  client    Client?    @relation("ClientSouscripteurs", fields: [clientId], references: [id])
+}
+
+model Client {
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  contracts     Contract[]
+  souscripteurs User[]     @relation("ClientSouscripteurs")
+}
+
+model Product {
+  id               Int               @id @default(autoincrement())
+  reference        String            @unique
+  description      String
+  contractProducts ContractProduct[]
+}
+
+model Contract {
+  id                 Int               @id @default(autoincrement())
+  clientId           Int
+  userId             Int
+  startDate          DateTime
+  duration           Int
+  createdAt          DateTime          @default(now())
+  status             ContractStatus    @default(EN_COURS)
+  email              String?
+  renewalAlertMonths Int?
+  commentaire        String?
+  client             Client            @relation(fields: [clientId], references: [id])
+  user               User              @relation(fields: [userId], references: [id])
+  contractProducts   ContractProduct[]
+  reminders          Reminder[]
+}
+
+model ContractProduct {
+  id         Int      @id @default(autoincrement())
+  contractId Int
+  productId  Int
+  quantity   Int
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Reminder {
+  id            Int        @id @default(autoincrement())
+  contractId    Int
+  userId        Int
+  email         String
+  alarmOffset   Int
+  nextAlarmDate DateTime
+  active        Boolean    @default(true)
+  sentDates     DateTime[]
+  createdAt     DateTime   @default(now())
+  contract      Contract   @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id])
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String
+  timestamp DateTime @default(now())
+  ip        String?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model SmtpConfig {
+  id        Int      @id @default(autoincrement())
+  host      String
+  port      Int
+  user      String
+  password  String
+  ssl       Boolean
+  updatedAt DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  subject   String
+  body      String
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
   ADMIN
   COMMERCIAL
-}
-
-model Client {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique // Raison sociale
-  contracts Contract[]
-}
-
-model Product {
-  id          Int      @id @default(autoincrement())
-  reference   String   @unique
-  description String
-  contractProducts ContractProduct[]
+  SOUSCRIPTEUR
 }
 
 enum ContractStatus {
   EN_COURS
   EXPIRE
   RESILIE
-}
-
-model Contract {
-  email        String? // Adresse email pour l'alerte de renouvellement
-  id           Int      @id @default(autoincrement())
-  client       Client   @relation(fields: [clientId], references: [id])
-  clientId     Int
-  user         User     @relation(fields: [userId], references: [id])
-  userId       Int
-  startDate    DateTime
-  duration     Int // en mois
-  reminders    Reminder[]
-  contractProducts ContractProduct[]
-  createdAt    DateTime @default(now())
-  renewalAlertMonths Int?
-  status       ContractStatus @default(EN_COURS)
-}
-
-model ContractProduct {
-  id         Int      @id @default(autoincrement())
-  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  contractId Int
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  Int
-  quantity   Int
-}
-
-model Reminder {
-  id             Int      @id @default(autoincrement())
-  contract       Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  contractId     Int
-  user           User     @relation(fields: [userId], references: [id])
-  userId         Int
-  email          String
-  alarmOffset    Int // mois avant échéance (1,2,3)
-  nextAlarmDate  DateTime
-  active         Boolean  @default(true)
-  sentDates      DateTime[]
-  createdAt      DateTime @default(now())
-}
-
-model Log {
-  id        Int      @id @default(autoincrement())
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    Int?
-  action    String
-  timestamp DateTime @default(now())
-  ip        String?
-}
-
-model SmtpConfig {
-  id       Int    @id @default(autoincrement())
-  host     String
-  port     Int
-  user     String
-  password String
-  ssl      Boolean
-  updatedAt DateTime @updatedAt
-}
-
-model EmailTemplate {
-  id       Int    @id @default(autoincrement())
-  name     String @unique
-  subject  String
-  body     String
-  updatedAt DateTime @updatedAt
 }

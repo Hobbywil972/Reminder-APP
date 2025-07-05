@@ -116,7 +116,6 @@ export default function Login() {
       <footer style={{ marginTop: 32, color: '#888', fontSize: 14, textAlign: 'center', lineHeight: 1.3 }}>
         <div style={{ fontWeight: 700, color: '#00b3e6', fontSize: 15, letterSpacing: 1 }}>ReminderAPP</div>
         <div style={{ color: '#888', opacity: 0.85 }}>&copy; Willy GROMAT</div>
-        <div style={{ color: '#888', opacity: 0.7 }}>v1.0</div>
       </footer>
     </div>
   );

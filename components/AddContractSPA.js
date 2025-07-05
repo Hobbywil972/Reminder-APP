@@ -26,6 +26,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
     return d.toISOString().slice(0, 10);
   })();
   const [status, setStatus] = useState(initialContract ? initialContract.status : 'EN_COURS');
+  const [commentaire, setCommentaire] = useState(initialContract ? initialContract.commentaire || '' : '');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -53,6 +54,17 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
     setProductsWithQuantities(pqs => pqs.length > 1 ? pqs.filter((_, i) => i !== idx) : pqs);
   };
 
+  const handleProductAdded = () => {
+    if (!selectedProductId) {
+      setError('Veuillez sélectionner un produit.');
+      return;
+    }
+    setProductsWithQuantities(pqs => [...pqs, { productId: Number(selectedProductId), quantity: selectedQuantity }]);
+    setSelectedProductId('');
+    setSelectedQuantity(1);
+    setError('');
+  };
+
   useEffect(() => {
     if (initialContract) {
       setEmail(initialContract.email || '');
@@ -62,6 +74,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
       setStartDate(initialContract.startDate?.slice(0,10) || '');
       setDuration(initialContract.duration || 12);
       setStatus(initialContract.status || 'EN_COURS');
+      setCommentaire(initialContract.commentaire || '');
     }
     // eslint-disable-next-line
   }, [initialContract]);
@@ -70,20 +83,29 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!clientId || !startDate || !duration) {
-      setError('Client, produit(s), dates et durée obligatoires');
+
+
+
+    const isUpdate = !!initialContract;
+
+    // Validation des champs principaux
+    if (!clientId || !startDate || !duration || productsWithQuantities.length === 0 || productsWithQuantities.some(p => !p.productId || !p.quantity)) {
+      setError('Champs obligatoires manquants (client, dates, produits...)');
       return;
     }
-    if (productsWithQuantities.length === 0) {
-      setError('Au moins un produit doit être ajouté.');
+
+    // Validation de l'email : obligatoire seulement à la création
+    if (!isUpdate && !email) {
+      setError('L\'adresse email est obligatoire pour la création d\'un contrat.');
       return;
     }
-    // Remplace productsWithQuantities par filteredProductsWithQuantities pour l'envoi
-    // et autorise 1 ou plusieurs produits sélectionnés
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setError('Adresse email valide obligatoire');
+
+    // Validation du format de l'email s'il est fourni
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setError('Le format de l\'adresse email est invalide.');
       return;
     }
+
     if (!status) {
       setError('Statut obligatoire');
       return;
@@ -105,14 +127,21 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
       setError('Erreur technique : CSRF Token manquant. Veuillez recharger la page.');
       return;
     }
-    const method = initialContract ? 'PUT' : 'POST';
-    const payload = initialContract ?
-      { id: initialContract.id, clientId: Number(clientId), productsWithQuantities, startDate, endDate: computedEndDate, status, duration: Number(duration), renewalAlertMonths: Number(renewalAlertMonths), email, csrfToken }
-      : { clientId: Number(clientId), productsWithQuantities, startDate, duration: Number(duration), status, renewalAlertMonths: Number(renewalAlertMonths), email, csrfToken };
+    const body = JSON.stringify({
+      clientId: Number(clientId),
+      productsWithQuantities,
+      startDate,
+      duration: Number(duration),
+      status,
+      renewalAlertMonths: Number(renewalAlertMonths),
+      email,
+      commentaire,
+      ...(initialContract && { id: initialContract.id }),
+    });
     const res = await fetch('/api/admin/contracts', {
-      method,
+      method: initialContract ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body,
       credentials: 'include',
     });
     if (res.ok) {
@@ -239,12 +268,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}>
             <button
               type="button"
-              onClick={() => {
-                if (!selectedProductId) return;
-                setProductsWithQuantities(pqs => [...pqs, { productId: Number(selectedProductId), quantity: selectedQuantity }]);
-                setSelectedProductId('');
-                setSelectedQuantity(1);
-              }}
+              onClick={handleProductAdded}
               style={{
                 background: selectedProductId ? 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)' : '#e6f7fa',
                 color: selectedProductId ? '#fff' : '#9cc4d6',
@@ -285,6 +309,8 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
             </button>
           </div>
         </div>
+
+        {/* Tableau des produits ajoutés */}
         {productsWithQuantities.length > 0 && (
           <table style={{ width: '100%', marginTop: 12, borderCollapse: 'collapse' }}>
             <thead>
@@ -304,7 +330,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
                     <td>
                       <button
                         type="button"
-                        onClick={() => setProductsWithQuantities(pqs => pqs.filter((_, i) => i !== idx))}
+                        onClick={() => handleRemoveLine(idx)}
                         style={{ background: '#eee', color: '#a00', border: '1px solid #ccc', borderRadius: 4, padding: '2px 10px', cursor: 'pointer' }}
                       >
                         Supprimer
@@ -316,6 +342,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
             </tbody>
           </table>
         )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 18 }}>
 
           <label style={{ fontWeight: 'bold' }}>Adresse Email (pour l'alerte de renouvellement)</label>
@@ -338,6 +365,13 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           )}
           <label style={{ fontWeight: 'bold' }}>Alerte de renouvellement (mois avant fin)</label>
           <input type="number" min={1} max={12} value={renewalAlertMonths} onChange={e => setRenewalAlertMonths(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
+          <label style={{ fontWeight: 'bold' }}>Commentaire</label>
+          <textarea
+            value={commentaire}
+            onChange={e => setCommentaire(e.target.value)}
+            style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4, minHeight: 80, fontFamily: 'inherit' }}
+            placeholder="Ajouter un commentaire..."
+          />
           <button
             type="submit"
             style={{

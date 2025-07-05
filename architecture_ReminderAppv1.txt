@@ -1,0 +1,119 @@
+# Architecture et Fonctionnalités de ReminderAPP v1
+
+## 1. Vue d'ensemble
+   - Application Next.js utilisant NextAuth.js pour l'authentification et Prisma comme ORM pour la gestion de la base de données.
+   - L'application gère plusieurs rôles utilisateurs : ADMIN, SUPERADMIN, COMMERCIAL, et SOUSCRIPTEUR, chacun avec des interfaces et des permissions distinctes.
+   - L'objectif principal est de permettre la gestion de clients, produits, contrats, et utilisateurs, ainsi que de fournir une interface aux souscripteurs pour visualiser leurs contrats.
+
+## 2. Structure des Fichiers et Répertoires Principaux
+   - `C:\Users\wg\CascadeProjects\Reminder-APP\` (Répertoire racine du projet)
+     - `components/`: Contient les composants React réutilisables.
+       - `Layout/AdminLayout.js`: Layout principal pour la plupart des pages de l'interface d'administration. Gère la sidebar de navigation et l'affichage des informations de l'utilisateur.
+       - `AddClientSPA.js`, `AddProductSPA.js`, `AddContractSPA.js`, etc. : Composants pour les formulaires d'ajout/modification en mode Single Page Application (SPA), améliorant l'expérience utilisateur.
+       - `SortableTh.js`: Composant pour créer des en-têtes de tableau triables.
+       - D'autres composants utilitaires (ex: modales, éléments de formulaire spécifiques).
+     - `pages/`: Définit la structure de routing de l'application Next.js.
+       - `admin/`: Contient les pages et la logique de l'interface d'administration.
+         - `index.js`: Point d'entrée principal de l'interface d'administration, qui affiche dynamiquement les sections (utilisateurs, clients, produits, etc.) en fonction d'un paramètre d'URL `section`.
+         - `clients.js`, `products.js`, `contracts.js`, `souscripteurs.js`, `users.js`: Fichiers (ou composants importés) qui définissent le contenu de chaque section de l'interface d'administration.
+         - `creer.js` (souvent dans des sous-dossiers comme `admin/souscripteurs/creer.js`): Pages dédiées à la création de nouvelles entités.
+         - `[id].js` (souvent dans des sous-dossiers comme `admin/souscripteurs/[id].js`): Pages dynamiques pour la visualisation ou la modification d'une entité spécifique.
+       - `api/`: Contient les endpoints de l'API Next.js.
+         - `auth/[...nextauth].js`: Fichier central pour la configuration de NextAuth.js (stratégies d'authentification, callbacks, etc.).
+         - `admin/`: Ensemble d'APIs RESTful pour les opérations CRUD (Create, Read, Update, Delete) sur les entités gérées par l'admin (clients, produits, contrats, utilisateurs, souscripteurs). Ces APIs incluent la validation des rôles.
+         - `souscripteur/contracts.js`: API spécifique permettant aux utilisateurs avec le rôle SOUSCRIPTEUR de récupérer la liste de leurs contrats.
+       - `auth/signin.js`: Page de connexion personnalisée pour l'application.
+       - `commercial/dashboard.js`: Tableau de bord spécifique pour les utilisateurs ayant le rôle COMMERCIAL, avec son propre layout et ses propres sections.
+       - `souscripteur/dashboard.js`: Tableau de bord spécifique pour les utilisateurs ayant le rôle SOUSCRIPTEUR, leur permettant de visualiser leurs informations personnelles et leurs contrats.
+       - `index.js`: Page d'accueil de l'application, qui agit comme un point de dispatching en redirigeant les utilisateurs vers le tableau de bord approprié en fonction de leur rôle, ou vers la page de connexion s'ils ne sont pas authentifiés.
+     - `prisma/`: Contient tout ce qui est lié à Prisma ORM.
+       - `schema.prisma`: Fichier de définition du schéma de la base de données (modèles, relations, types de données).
+       - `migrations/`: Répertoire contenant les migrations SQL générées par Prisma Migrate, reflétant l'évolution du schéma.
+     - `public/`: Pour les fichiers statiques accessibles publiquement (ex: images comme `logo-infodom.png`).
+     - `lib/`: Peut contenir des fichiers utilitaires, comme une instance partagée du client Prisma (`prisma.js`).
+     - `styles/`: Pour les fichiers CSS globaux ou les modules CSS (si utilisés).
+
+## 3. Authentification (NextAuth.js)
+   - La configuration se trouve dans `pages/api/auth/[...nextauth].js`.
+   - Utilisation du fournisseur `Credentials` pour une authentification par email et mot de passe.
+     - La fonction `authorize` valide les identifiants fournis contre la table `User` dans la base de données (après avoir déhashé le mot de passe stocké).
+   - Callbacks JWT et Session :
+     - Le callback `jwt` est utilisé pour enrichir le JSON Web Token avec des informations utilisateur supplémentaires (comme `id` et `role`) après une connexion réussie.
+     - Le callback `session` est utilisé pour transférer ces informations du token vers l'objet `session` accessible côté client.
+   - Gestion des rôles utilisateurs (stockés dans `User.role` en base de données) :
+     - `ADMIN`, `SUPERADMIN`: Ont généralement un accès complet à toutes les fonctionnalités de l'interface d'administration.
+     - `COMMERCIAL`: A un accès plus restreint, typiquement aux sections Clients, Produits, et Contrats de l'interface d'administration, et à son propre tableau de bord (`/commercial/dashboard`).
+     - `SOUSCRIPTEUR`: A accès uniquement à son tableau de bord (`/souscripteur/dashboard`) pour consulter ses informations et contrats.
+   - La redirection après connexion est gérée par `callbackUrl` dans NextAuth, souvent initialisée depuis `pages/auth/signin.js` et pointant vers `pages/index.js` pour le dispatching.
+   - La déconnexion est gérée par la fonction `signOut()` de `next-auth/react`, avec une redirection vers la page de connexion.
+
+## 4. Layouts et Structure des Pages
+   - **Layout Admin (`components/Layout/AdminLayout.js`):**
+     - Utilisé comme wrapper pour la plupart des pages sous `/admin`.
+     - Fournit une structure cohérente avec une sidebar de navigation (liens dynamiques basés sur le rôle) et un header affichant les informations de l'utilisateur connecté.
+   - **Layout Commercial (`pages/commercial/dashboard.js`):**
+     - Ce fichier définit son propre layout complet, incluant une sidebar et un header spécifiques pour l'interface commerciale. Il n'utilise pas `AdminLayout.js`.
+     - La navigation interne se fait par mise à jour de l'état local `section`.
+   - **Layout Souscripteur (`pages/souscripteur/dashboard.js`):**
+     - Page simple, sans sidebar de navigation complexe. L'accent est mis sur l'affichage direct des informations.
+   - **Page de Connexion (`pages/auth/signin.js`):**
+     - Formulaire de connexion personnalisé, utilisant `getCsrfToken()` pour la protection CSRF.
+
+## 5. Logique des Pages Principales et Navigation
+   - **`pages/index.js` (Dispatching Central):**
+     - Vérifie la session de l'utilisateur.
+     - Redirige vers `/admin`, `/commercial/dashboard`, ou `/souscripteur/dashboard` en fonction du `session.user.role`.
+     - Si l'utilisateur n'est pas authentifié, il est redirigé vers `/auth/signin`.
+   - **`pages/admin/index.js` (Hub de l'Interface Admin):**
+     - Utilise `AdminLayout.js`.
+     - Affiche dynamiquement différentes sections (Users, Clients, Products, etc.) basées sur un paramètre de requête `section` dans l'URL (ex: `/admin?section=users`).
+     - Les liens dans la sidebar de `AdminLayout` mettent à jour ce paramètre `section` pour changer la vue affichée.
+   - **`pages/commercial/dashboard.js` (Tableau de Bord Commercial):**
+     - Layout autonome avec sa propre sidebar.
+     - Gère l'affichage de différentes vues (Dashboard avec widgets, Clients, Produits, Contrats) via un état local `section`.
+   - **`pages/souscripteur/dashboard.js` (Tableau de Bord Souscripteur):**
+     - Récupère et affiche les contrats du souscripteur connecté via l'API `/api/souscripteur/contracts`.
+     - Affiche les détails des contrats, y compris les produits associés (avec un tooltip pour la description du produit).
+     - Calcule et affiche la date de fin des contrats à partir de la date de début et de la durée.
+
+## 6. API Endpoints (sous `pages/api/`)
+   - **`auth/[...nextauth].js`**: Gère toutes les routes liées à l'authentification (connexion, déconnexion, session, CSRF).
+   - **`admin/` (multiples fichiers et routes dynamiques):**
+     - Fournit des endpoints CRUD pour les entités : `users`, `clients`, `products`, `contracts`, `souscripteurs`.
+     - Par exemple, `GET /api/admin/clients` pour lister les clients, `POST /api/admin/clients` pour en créer un nouveau.
+     - `clients-for-select.js`: Endpoint pour lister les clients de manière simplifiée, typiquement pour les menus déroulants.
+     - `export-csv.js`, `import-csv.js`: Endpoints pour gérer l'export et l'import de données en format CSV.
+     - Toutes ces routes incluent une vérification du rôle de l'utilisateur pour la sécurité.
+   - **`souscripteur/contracts.js`:**
+     - Endpoint `GET` qui permet à un utilisateur SOUSCRIPTEUR authentifié de récupérer les contrats associés à son `clientId`.
+     - L'API s'assure d'inclure les détails des produits liés à chaque contrat via la table de jointure `ContractProduct` et gère la sauvegarde du champ `commentaire`.
+
+## 7. Base de Données (Prisma - `prisma/schema.prisma`)
+   - Modèles principaux définis dans `schema.prisma`:
+     - `User`: Stocke les informations des utilisateurs, y compris `email` (unique), `password` (hashé), `name`, et `role` (enum: ADMIN, SUPERADMIN, COMMERCIAL, SOUSCRIPTEUR). Peut aussi avoir un `clientId` si l'utilisateur est un souscripteur lié à un client.
+     - `Client`: Représente une entité cliente avec des informations comme `name`, `email`, `address`, etc.
+     - `Product`: Définit les produits avec une `reference` (unique) et une `description`.
+     - `Contract`: Représente un contrat avec un `status`, `startDate` (DateTime), `duration` (Int, en mois), un champ optionnel `commentaire` (String), et est lié à un `Client` (relation `clientId`).
+     - `ContractProduct`: Table de jointure pour la relation plusieurs-à-plusieurs entre `Contract` et `Product`, permettant à un contrat d'avoir plusieurs produits et à un produit d'être dans plusieurs contrats.
+   - Relations clés :
+     - `User` (SOUSCRIPTEUR) 1 --- 1 `Client` (via le champ optionnel `clientId` sur le modèle `User`).
+     - `Client` 1 --- * `Contract` (un client peut avoir plusieurs contrats).
+     - `Contract` * --- * `Product` (via la table `ContractProduct`).
+
+## 8. Fonctionnalités Clés Implémentées
+   - Système d'authentification robuste avec gestion des rôles.
+   - Interfaces utilisateurs distinctes et adaptées pour les rôles Admin, Commercial, et Souscripteur.
+   - Opérations CRUD complètes pour les entités principales (Utilisateurs, Clients, Produits, Contrats, Souscripteurs) via l'interface d'administration.
+   - Affichage personnalisé des contrats pour les souscripteurs, incluant les détails des produits et le calcul de la date de fin.
+   - Tooltip affichant la description complète du produit au survol de sa référence dans la liste des contrats.
+   - Fonctionnalités d'import et d'export de données au format CSV pour certaines entités (gérées par l'Admin).
+   - Capacités de recherche et de tri dans les tableaux de données de l'interface d'administration.
+
+## 9. Points d'Attention et Logiques Spécifiques
+   - **Sécurité et Contrôle d'Accès:** La logique de vérification des rôles est cruciale et est implémentée à la fois côté client (pour masquer/afficher des éléments d'interface) et côté serveur (dans `getServerSideProps` pour la protection des pages et dans les API handlers pour la protection des données).
+   - **Gestion de l'état et Fetching de Données:** Utilisation de `useState` et `useEffect` pour la gestion de l'état local et le fetching de données côté client. `getServerSideProps` est utilisé pour le fetching de données avant le rendu de la page lorsque nécessaire, ou pour la protection de route.
+   - **Composants SPA pour Formulaires:** Des composants comme `AddClientSPA.js` sont utilisés pour créer une expérience utilisateur plus dynamique lors de l'ajout ou de la modification de données, en évitant les rechargements complets de page.
+   - **Cohérence de l'UI:** L'utilisation de layouts partagés (`AdminLayout.js`) aide à maintenir une interface utilisateur cohérente pour les sections d'administration. Les dashboards spécifiques (`commercial/dashboard.js`, `souscripteur/dashboard.js`) ont leur propre structure adaptée à leur fonction.
+   - **Gestion des Migrations Prisma :** En cas de désynchronisation entre le `schema.prisma` et la base de données (provoquant des erreurs de migration), la procédure de résolution consiste à utiliser `npx prisma db pull` pour réaligner le schéma sur l'état de la base, puis `npx prisma generate` pour mettre à jour le client Prisma. Cette étape est cruciale avant de tenter de nouvelles migrations.
+
+Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 5 juillet 2025. Il pourra nécessiter des mises à jour si l'application continue d'évoluer.

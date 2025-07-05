@@ -4,10 +4,10 @@ import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
   const session = await getSession(context);
-  if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SUPERADMIN')) {
     return {
       redirect: {
-        destination: '/auth/login',
+        destination: '/auth/signin',
         permanent: false,
       },
     };

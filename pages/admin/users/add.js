@@ -3,16 +3,29 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context);
-  if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+  try {
+    const session = await getSession(context);
+
+    if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
     return {
       redirect: {
-        destination: '/auth/login',
+        destination: '/auth/signin',
         permanent: false,
       },
     };
   }
   return { props: {} };
+  } catch (error) {
+    console.error('ERROR in getServerSideProps /admin/users/add.js:', error);
+    // En cas d'erreur inattendue, rediriger vers la page de connexion
+    // Vous pourriez vouloir une page d'erreur plus spécifique ici
+    return {
+      redirect: {
+        destination: '/auth/signin?error=ServerError',
+        permanent: false,
+      },
+    };
+  }
 }
 
 export default function AddUser() {

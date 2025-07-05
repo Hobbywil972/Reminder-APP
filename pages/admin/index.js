@@ -7,23 +7,50 @@ import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
-  if (!session) {
+
+  if (!session || !session.user) { // Vérifie session et session.user
     return {
       redirect: {
-        destination: '/auth/login',
+        destination: '/auth/signin',
         permanent: false,
       },
     };
   }
+
+  // S'assurer que l'objet session.user existe et contient les informations nécessaires
+  // Si session.user n'est pas directement peuplé par votre `authOptions` callbacks,
+  // vous devrez peut-être le récupérer de la base de données ici en utilisant session.user.id ou session.user.email.
+  // Pour l'instant, on suppose que session (ou session.user) contient { name, email, role }
+  // session.user est maintenant garanti d'exister grâce à la vérification ci-dessus.
+  // Nous utilisons directement session.user pour plus de clarté et de cohérence.
+  const userFromSession = session.user;
+
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
-  const users = session.role === 'ADMIN' || session.role === 'SUPERADMIN'
-    ? await prisma.user.findMany({
-        select: { id: true, name: true, email: true, role: true },
-        orderBy: { name: 'asc' },
-      })
-    : [];
-  return { props: { user: session.role, users } };
+  
+  let usersList = [];
+  if (session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN') {
+    usersList = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  // Déterminer la section à afficher, avec 'clients' comme défaut
+  const currentSection = context.query.section || 'clients'; 
+
+  return {
+    props: {
+      // Passer l'objet utilisateur complet nécessaire pour AdminLayout et les sections
+      user: {
+        name: session.user.name,
+        email: session.user.email,
+        role: session.user.role, // Utilise directement session.user.role
+      },
+      users: usersList, // Renommé pour éviter la confusion avec 'user' de la session
+      initialSection: currentSection,
+    },
+  };
 }
 
 function UsersSection({ users, user }) {
@@ -154,9 +181,11 @@ function UsersSection({ users, user }) {
 }
 
 import AddClientSPA from '../../components/AddClientSPA';
+import EditClientSPA from '../../components/EditClientSPA';
 import ProductsSection from './products';
 import ContractsSection from './contracts';
 import Configuration from './configuration';
+import SouscripteursSection from './souscripteurs';
 
 /**
  * Composant de gestion des clients.
@@ -454,103 +483,36 @@ function ClientsSection() {
   );
 }
 
-export default function AdminDashboard({ user, users }) {
-  const [section, setSection] = useState('users');
+import AdminLayout from '../../components/Layout/AdminLayout';
 
+export default function AdminDashboard({ user, users: usersListProp, initialSection }) {
+  const router = useRouter();
+  // La section est maintenant déterminée par l'URL, gérée par le Link dans AdminLayout
+  // et initialisée par initialSection via getServerSideProps.
+  // Si vous avez besoin de changer de section programmatiquement SANS recharger la page via Link,
+  // vous pourriez utiliser router.push(`/admin?section=nouvelleSection`, undefined, { shallow: true });
+  // et un useEffect pour écouter router.query.section.
+  // Pour l'instant, on se base sur initialSection pour le rendu initial.
+  const currentSection = router.query.section || initialSection; 
+
+  // La prop 'user' est l'objet utilisateur complet { name, email, role }
+  // La prop 'usersListProp' est la liste des utilisateurs pour la section 'users'
+  // La prop 'initialSection' est la section à afficher initialement
+
+  // Le composant AdminLayout gère maintenant la sidebar, le header et la navigation de section.
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Montserrat, sans-serif' }}>
-      <aside style={{ width: 240, background: '#00b3e6', color: '#fff', padding: '32px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '2px 0 16px #00b3e610', borderTopRightRadius: 24, borderBottomRightRadius: 24, minHeight: '100vh', fontFamily: 'Montserrat, sans-serif' }}>
-        <img src="/logo-infodom.png" alt="Infodom Logo" style={{ height: 54, marginBottom: 8 }} />
-        <span style={{ fontWeight: 700, fontSize: 22, color: '#fff', letterSpacing: 1, marginBottom: 32 }}>Infodom</span>
-        <nav style={{ width: '100%' }}>
-          <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
-            <li>
-              <button onClick={() => setSection('users')} style={{ background: section === 'users' ? '#0090b3' : 'none', color: '#fff', border: 'none', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="users" style={{ marginRight: 12 }}>👥</span> Utilisateurs
-              </button>
-            </li>
-            <li>
-              <button onClick={() => setSection('clients')} style={{ background: section === 'clients' ? '#0090b3' : 'none', color: '#fff', border: 'none', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="clients" style={{ marginRight: 12 }}>🏢</span> Clients
-              </button>
-            </li>
-            <li>
-              <button onClick={() => setSection('products')} style={{ background: section === 'products' ? '#0090b3' : 'none', color: '#fff', border: 'none', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="products" style={{ marginRight: 12 }}>📦</span> Produits
-              </button>
-            </li>
-            <li>
-              <button onClick={() => setSection('contracts')} style={{ background: section === 'contracts' ? '#0090b3' : 'none', color: '#fff', border: 'none', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="contracts" style={{ marginRight: 12 }}>📜</span> Contrats
-              </button>
-            </li>
-            <li>
-              <button onClick={() => setSection('configuration')} style={{ background: section === 'configuration' ? '#0090b3' : 'none', color: '#fff', border: 'none', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="config" style={{ marginRight: 12 }}>⚙️</span> Configuration
-              </button>
-            </li>
-            <li>
-              <a href="/admin/export-csv" style={{ display: 'block', color: '#fff', textDecoration: 'none', padding: '14px 32px', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', background: 'none', textAlign: 'left', width: '100%', cursor: 'pointer', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="export" style={{ marginRight: 12 }}>⬇️</span> Export CSV
-              </a>
-            </li>
-            <li>
-              <a href="/admin/import-csv" style={{ display: 'block', color: '#fff', textDecoration: 'none', padding: '14px 32px', fontWeight: 600, fontSize: 17, borderRadius: 12, margin: '4px 0', background: 'none', textAlign: 'left', width: '100%', cursor: 'pointer', transition: 'background 0.15s' }}>
-                <span role="img" aria-label="import" style={{ marginRight: 12 }}>⬆️</span> Import CSV
-              </a>
-            </li>
-            <li>
-              <button
-                onClick={() => {
-                  signOut({ callbackUrl: '/auth/signin', redirect: true }).then(() => {
-                    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-                      const cookieNames = [
-                        'next-auth.session-token',
-                        '__Secure-next-auth.session-token',
-                        'next-auth.csrf-token',
-                        '__Secure-next-auth.csrf-token',
-                        'next-auth.callback-url'
-                      ];
-                      cookieNames.forEach(name => {
-                        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-                        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
-                      });
-                    }
-                    setTimeout(() => {
-                      window.location.reload(true);
-                    }, 500);
-                  });
-                }}
-                style={{ background: '#fff', color: '#00b3e6', border: '1.5px solid #cce8f6', padding: '14px 32px', textAlign: 'left', width: '100%', cursor: 'pointer', borderRadius: 12, marginTop: 32, fontWeight: 700, fontSize: 17, transition: 'background 0.15s' }}
-              >
-                <span role="img" aria-label="logout" style={{ marginRight: 12 }}>🚪</span> Déconnexion
-              </button>
-            </li>
-          </ul>
-        </nav>
-        <div style={{ marginTop: 'auto', width: '100%', padding: '0 0 18px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', opacity: 0.95, marginBottom: 2, letterSpacing: 1 }}>ReminderAPP</div>
-          <div style={{ fontSize: 13, color: '#fff', opacity: 0.7, marginBottom: 1 }}>&copy; Willy GROMAT</div>
-          <div style={{ fontSize: 13, color: '#fff', opacity: 0.7 }}>v1.0</div>
-        </div>
-      </aside>
-      <main style={{ flex: 1, padding: 32, background: '#f6fcff', minHeight: '100vh', fontFamily: 'Montserrat, sans-serif' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', borderRadius: 18, boxShadow: '0 2px 12px #00b3e610', padding: '24px 40px 24px 40px', marginBottom: 36 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <img src="/logo-infodom.png" alt="Infodom Logo" style={{ height: 36 }} />
-            <span style={{ fontWeight: 700, fontSize: 22, color: '#00b3e6', letterSpacing: 1 }}>Infodom</span>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 600, fontSize: 18, color: '#222' }}>Bienvenue, {user.name}</div>
-            <div style={{ color: '#888', fontSize: 15 }}>{user.email}</div>
-          </div>
-        </header>
-        {section === 'users' && <UsersSection users={users} user={user} />}
-        {section === 'clients' && <ClientsSection user={user} />}
-        {section === 'products' && <ProductsSection user={user} />}
-        {section === 'contracts' && <ContractsSection user={user} />}
-        {section === 'configuration' && <Configuration user={user} />}
-      </main>
-    </div>
+    <AdminLayout user={user} currentSection={currentSection}>
+      {/* Le contenu spécifique à la section est rendu ici */}
+      {currentSection === 'users' && <UsersSection users={usersListProp} user={user} />}
+      {currentSection === 'clients' && <ClientsSection user={user} />}
+      {currentSection === 'souscripteurs' && <SouscripteursSection user={user} />}
+      {currentSection === 'products' && <ProductsSection user={user} />}
+      {currentSection === 'contracts' && <ContractsSection user={user} />}
+      {currentSection === 'configuration' && <Configuration user={user} />}
+      {/* Ajoutez un fallback ou un message si la section n'est pas reconnue */}
+      {!['users', 'clients', 'souscripteurs', 'products', 'contracts', 'configuration'].includes(currentSection) && (
+        <p>Section non trouvée. Veuillez sélectionner une section dans le menu.</p>
+      )}
+    </AdminLayout>
   );
 }

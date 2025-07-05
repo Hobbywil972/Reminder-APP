@@ -122,9 +122,9 @@ export const authOptions = {
         session.user.id = token.id; // Assurez-vous que l'ID est bien dans le token
         session.user.name = token.name;
         session.user.email = token.email;
-        session.role = token.role; // Peut-être session.user.role selon votre structure
+        session.user.role = token.role; // Assigner à session.user.role
         // Log explicite du rôle ajouté à la session
-        console.log(`[AUTH][SESSION] Role added to session: ${session.role}`);
+        console.log(`[AUTH][SESSION] Role added to session.user: ${session.user.role}`);
       } else {
           console.log('[AUTH][SESSION] No token or session.user found, returning original session.');
       }

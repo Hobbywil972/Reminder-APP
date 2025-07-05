@@ -29,6 +29,7 @@ export default function ContractsSection({ user: userProp }) {
   const [searchReference, setSearchReference] = useState('');
   const [dateFinStart, setDateFinStart] = useState('');
   const [dateFinEnd, setDateFinEnd] = useState('');
+  const [searchCommentaire, setSearchCommentaire] = useState('');
 
   // Hook trié
   const sortedContracts = useSortableData(contracts, sort);
@@ -50,8 +51,13 @@ export default function ContractsSection({ user: userProp }) {
     let dateMatch = true;
     if (dateFinStart) dateMatch = dateMatch && fin && fin.slice(0,10) >= dateFinStart;
     if (dateFinEnd) dateMatch = dateMatch && fin && fin.slice(0,10) <= dateFinEnd;
-    return clientMatch && refMatch && dateMatch;
+
+    const commentaireMatch = !searchCommentaire || (contract.commentaire || '').toLowerCase().includes(searchCommentaire.toLowerCase());
+
+    return clientMatch && refMatch && dateMatch && commentaireMatch;
   });
+
+  const paginatedContracts = filteredContracts.slice((page - 1) * contractsPerPage, page * contractsPerPage);
 
   // Fonction utilitaire pour parser le JSON et afficher les erreurs API
   async function safeJson(res) {
@@ -127,252 +133,210 @@ export default function ContractsSection({ user: userProp }) {
       {/* Zone de filtres améliorée */}
       <div style={{ background: '#fff', boxShadow: '0 2px 16px #00b3e610', borderRadius: 16, padding: '18px 28px', marginBottom: 24, display: 'flex', alignItems: 'flex-end', gap: 32, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Client</label>
-          <input
-            type="text"
-            placeholder="Rechercher par client..."
-            value={searchClient}
-            onChange={e => { setSearchClient(e.target.value); setPage(1); }}
-            style={{ padding: 8, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', minWidth: 180, background: '#f6fcff' }}
-          />
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Client</label>
+          <input type="text" value={searchClient} onChange={e => setSearchClient(e.target.value)} placeholder="Rechercher..." style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 200 }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Référence</label>
-          <input
-            type="text"
-            placeholder="Rechercher par référence..."
-            value={searchReference}
-            onChange={e => { setSearchReference(e.target.value); setPage(1); }}
-            style={{ padding: 8, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', minWidth: 150, background: '#f6fcff' }}
-          />
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Référence produit</label>
+          <input type="text" value={searchReference} onChange={e => setSearchReference(e.target.value)} placeholder="Rechercher..." style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 200 }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Fin entre</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="date"
-              value={dateFinStart}
-              onChange={e => { setDateFinStart(e.target.value); setPage(1); }}
-              style={{ padding: 7, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', background: '#f6fcff' }}
-            />
-            <span style={{ color: '#888', fontSize: 13 }}>et</span>
-            <input
-              type="date"
-              value={dateFinEnd}
-              onChange={e => { setDateFinEnd(e.target.value); setPage(1); }}
-              style={{ padding: 7, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', background: '#f6fcff' }}
-            />
-          </div>
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Commentaire</label>
+          <input type="text" value={searchCommentaire} onChange={e => setSearchCommentaire(e.target.value)} placeholder="Rechercher..." style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 200 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Fin contrat (début)</label>
+          <input type="date" value={dateFinStart} onChange={e => setDateFinStart(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Fin contrat (fin)</label>
+          <input type="date" value={dateFinEnd} onChange={e => setDateFinEnd(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
         </div>
         <button
-          type="button"
-          onClick={() => { setSearchClient(''); setDateFinStart(''); setDateFinEnd(''); setPage(1); }}
-          style={{ marginLeft: 10, marginTop: 18, padding: '8px 20px', borderRadius: 8, border: 'none', background: '#e6f7fa', color: '#00b3e6', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 8px #00b3e610', transition: 'background 0.18s' }}
+          onClick={() => { setSearchClient(''); setSearchReference(''); setDateFinStart(''); setDateFinEnd(''); setSearchCommentaire(''); }}
+          style={{
+            padding: '9px 24px', background: '#f6fcff', color: '#00b3e6', border: '1.5px solid #cce8f6',
+            borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',
+            transition: 'background 0.12s', alignSelf: 'flex-end'
+          }}
         >
           Réinitialiser
         </button>
       </div>
-      {/* En-tête contrats et actions */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 28, color: '#00b3e6', background: '#e6f7fa', borderRadius: '50%', padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📄</span>
-          <h2 style={{ color: '#00b3e6', fontWeight: 800, fontSize: 26, margin: 0, letterSpacing: 1 }}>Contrats</h2>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <label style={{ fontWeight: 700, color: '#00b3e6', fontFamily: 'Montserrat, sans-serif', fontSize: 15, display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '1.5px solid #00b3e6', borderRadius: 10, boxShadow: '0 2px 8px #00b3e610', padding: '6px 20px', marginRight: 0 }}>
-            <span role="img" aria-label="voir">👁️</span> Afficher&nbsp;
-            <select
-              value={contractsPerPage}
-              onChange={e => { setContractsPerPage(Number(e.target.value)); setPage(1); }}
-              style={{ padding: '6px 14px', border: '1.5px solid #cce8f6', borderRadius: 8, fontFamily: 'Montserrat, sans-serif', fontSize: 15, background: '#f6fcff', color: '#222', outline: 'none', marginLeft: 4, marginRight: 4 }}
-            >
-              <option value={10}>10</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            &nbsp;par page
-          </label>
-          <button
-            style={{
-              background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 12,
-              padding: '13px 0',
-              fontWeight: 800,
-              fontSize: 18,
-              fontFamily: 'Montserrat, sans-serif',
-              boxShadow: '0 4px 18px #00b3e650',
-              cursor: 'pointer',
-              transition: 'background 0.18s, box-shadow 0.18s',
-              width: 240,
-              letterSpacing: 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              textTransform: 'uppercase',
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
-              e.currentTarget.style.boxShadow = '0 8px 32px #00b3e660';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
-              e.currentTarget.style.boxShadow = '0 4px 18px #00b3e650';
-            }}
-            onClick={() => setMode('add')}
-          >
-            <span role="img" aria-label="plus">➕</span> AJOUTER
-          </button>
-        </div>
-      </header>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ color: '#005f73', fontSize: 28, fontWeight: 800 }}>Liste des contrats</h2>
+        <button
+          onClick={() => setMode('add')}
+          style={{
+            background: 'linear-gradient(90deg, #00b3e6 60%, #00e0c6 100%)', color: '#fff', border: 'none', borderRadius: 10,
+            padding: '12px 28px', fontWeight: 800, fontSize: 16, fontFamily: 'Montserrat, sans-serif',
+            boxShadow: '0 4px 14px #00b3e660', cursor: 'pointer', transition: 'background 0.18s, box-shadow 0.18s'
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #00b39e 100%)';
+            e.currentTarget.style.boxShadow = '0 6px 20px #00b3e680';
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #00e0c6 100%)';
+            e.currentTarget.style.boxShadow = '0 4px 14px #00b3e660';
+          }}
+        >
+          + AJOUTER CONTRAT
+        </button>
+      </div>
+
       {loading ? (
-        <p>Chargement...</p>
+        <p>Chargement des contrats...</p>
       ) : (
-        <div style={{
-          background: '#fff',
-          borderRadius: 18,
-          boxShadow: '0 4px 18px #00b3e620',
-          padding: 0,
-          overflowX: 'auto',
-          marginBottom: 24,
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 680 }}>
-            <thead>
-              <tr style={{ background: '#00b3e6' }}>
-                <SortableTh label="Client" sortKey="client" sort={sort} setSort={setSort} />
-                <SortableTh label="Produits" sortKey="produits" sort={sort} setSort={setSort} />
-                <SortableTh label="Début" sortKey="debut" sort={sort} setSort={setSort} />
-                <SortableTh label="Fin" sortKey="fin" sort={sort} setSort={setSort} />
-                <SortableTh label="Email Alertée" sortKey="email" sort={sort} setSort={setSort} />
-                <SortableTh label="Statut" sortKey="statut" sort={sort} setSort={setSort} />
-                <th style={{ padding: 14, color: '#fff', fontWeight: 700, fontSize: 18, borderTopRightRadius: 18 }}>Actions</th>
+        <div style={{ background: '#fff', boxShadow: '0 2px 16px #00b3e610', borderRadius: 16, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: '#00b3e6', color: '#fff', borderRadius: '10px 10px 0 0' }}>
+              <tr>
+                <SortableTh label="Client" sortKey="client" sort={sort} setSort={setSort} style={{ borderTopLeftRadius: '10px' }} />
+                <SortableTh label="Commercial" sort={sort} setSort={setSort} sortKey="user" />
+                <SortableTh label="Produit(s)" sort={sort} setSort={setSort} sortKey="produit" />
+                <SortableTh label="Début" sort={sort} setSort={setSort} sortKey="startDate" />
+                <SortableTh label="Fin" sort={sort} setSort={setSort} sortKey="endDate" />
+                <SortableTh label="Email Notification" sort={sort} setSort={setSort} sortKey="email" />
+                <SortableTh label="Statut" sort={sort} setSort={setSort} sortKey="status" />
+                <SortableTh label="Commentaire" sort={sort} setSort={setSort} sortKey="commentaire" />
+                <th style={{ padding: '14px 18px', color: '#fff', fontWeight: 'bold', fontSize: '18px', textAlign: 'right', borderTopRightRadius: '10px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredContracts.slice((page-1)*contractsPerPage, page*contractsPerPage).map((contract, idx) => (
-  <tr key={contract.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopLeftRadius: idx === 0 ? 18 : 0 }}>
-      {contract.client?.name}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
-      {contract.contractProducts.map(cp => cp.product.reference).join(', ')}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
-      {formatDateFr(contract.startDate)}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
-      {(() => {
-        let fin = contract.endDate;
-        if (!fin && contract.startDate && contract.duration) {
-          const d = new Date(contract.startDate);
-          d.setMonth(d.getMonth() + Number(contract.duration));
-          if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
-          fin = d.toISOString();
-        }
-        return formatDateFr(fin);
-      })()}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
-      {contract.email || ''}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>
-      {contract.status || ''}
-    </td>
-    <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>
-      <button
-        style={{
-          background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 10,
-          padding: '9px 0',
-          fontWeight: 800,
-          fontSize: 15,
-          fontFamily: 'Montserrat, sans-serif',
-          boxShadow: '0 2px 8px #00b3e640',
-          cursor: 'pointer',
-          transition: 'background 0.18s, box-shadow 0.18s',
-          width: 120,
-          letterSpacing: 1,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          textTransform: 'uppercase',
-          marginRight: 8,
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #43e0ff 100%)';
-          e.currentTarget.style.boxShadow = '0 6px 18px #00b3e660';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)';
-          e.currentTarget.style.boxShadow = '0 2px 8px #00b3e640';
-        }}
-        onClick={() => { setEditContract(contract); setMode('edit'); }}
-      >
-        <span role="img" aria-label="crayon">✏️</span> MODIFIER
-      </button>
-      {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
-        <button
-          style={{
-            background: 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            padding: '9px 0',
-            fontWeight: 800,
-            fontSize: 15,
-            fontFamily: 'Montserrat, sans-serif',
-            boxShadow: '0 2px 8px #ff495770',
-            cursor: 'pointer',
-            transition: 'background 0.18s, box-shadow 0.18s',
-            width: 120,
-            letterSpacing: 1,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            textTransform: 'uppercase',
-          }}
-          onMouseOver={e => {
-            e.currentTarget.style.background = 'linear-gradient(90deg, #c9001a 60%, #ff8d43 100%)';
-            e.currentTarget.style.boxShadow = '0 6px 18px #ff495780';
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.background = 'linear-gradient(90deg, #ff4957 60%, #ff8d43 100%)';
-            e.currentTarget.style.boxShadow = '0 2px 8px #ff495770';
-          }}
-          onClick={async () => {
-            if (!window.confirm('Confirmer la suppression du contrat ?')) return;
-            const res = await fetch('/api/admin/contracts', {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: contract.id }),
-              credentials: 'include',
-            });
-            if (res.ok) {
-              setContracts(contracts.filter(c => c.id !== contract.id));
-            } else {
-              const data = await res.json();
-              alert(data.error || 'Erreur lors de la suppression');
-            }
-          }}
-        >
-          <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
-        </button>
-      )}
-    </td>
-  </tr>
-              ))}
+              {paginatedContracts.map(contract => {
+                let endDate = contract.endDate;
+                if (!endDate && contract.startDate && contract.duration) {
+                  const d = new Date(contract.startDate);
+                  d.setMonth(d.getMonth() + Number(contract.duration));
+                  if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
+                  endDate = d.toISOString();
+                }
+
+                const statusStyle = {
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  display: 'inline-block',
+                  textAlign: 'center',
+                };
+
+                let statusText, statusColor, statusBg;
+
+                switch (contract.status) {
+                  case 'EN_COURS':
+                    statusText = 'En cours';
+                    statusColor = '#007bff';
+                    statusBg = '#e6f2ff';
+                    break;
+                  case 'TERMINE':
+                    statusText = 'Terminé';
+                    statusColor = '#6c757d';
+                    statusBg = '#f0f2f5';
+                    break;
+                  case 'ANNULE':
+                    statusText = 'Annulé';
+                    statusColor = '#dc3545';
+                    statusBg = '#fde8ea';
+                    break;
+                }
+
+                return (
+                  <tr key={contract.id} style={{ borderBottom: '1px solid #eef9fe' }}>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{contract.client?.name || 'N/A'}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{contract.user ? contract.user.name : 'N/A'}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>
+                      {(contract.contractProducts || []).map(cp => cp.product?.reference).join(', ')}
+                    </td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{formatDateFr(contract.startDate)}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{formatDateFr(endDate)}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{contract.email}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>
+                      <span style={{ ...statusStyle, color: statusColor, background: statusBg }}>
+                        {statusText}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, color: '#333' }}>{contract.commentaire || ''}</td>
+                    <td style={{ padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <button
+                        style={{
+                          background: 'linear-gradient(90deg, #00b3e6 60%, #00e0c6 100%)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 10,
+                          padding: '9px 0',
+                          fontWeight: 800,
+                          fontSize: 15,
+                          fontFamily: 'Montserrat, sans-serif',
+                          boxShadow: '0 2px 8px #00b3e660',
+                          cursor: 'pointer',
+                          transition: 'background 0.18s, box-shadow 0.18s',
+                          width: 120,
+                          letterSpacing: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          textTransform: 'uppercase',
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.background = 'linear-gradient(90deg, #0090b3 60%, #00b39e 100%)';
+                          e.currentTarget.style.boxShadow = '0 6px 18px #00b3e680';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.background = 'linear-gradient(90deg, #00b3e6 60%, #00e0c6 100%)';
+                          e.currentTarget.style.boxShadow = '0 2px 8px #00b3e660';
+                        }}
+                        onClick={() => { setEditContract(contract); setMode('edit'); }}
+                      >
+                        <span role="img" aria-label="crayon">✏️</span> MODIFIER
+                      </button>
+                      {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+                        <button
+                          style={{
+                            background: 'linear-gradient(90deg, #ff6b6b 60%, #ff8e8e 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 10,
+                            padding: '9px 0',
+                            fontWeight: 800,
+                            fontSize: 15,
+                            fontFamily: 'Montserrat, sans-serif',
+                            boxShadow: '0 2px 8px #ff6b6b60',
+                            cursor: 'pointer',
+                            transition: 'background 0.18s, box-shadow 0.18s',
+                            width: 120,
+                            letterSpacing: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            textTransform: 'uppercase',
+                          }}
+                          onMouseOver={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #e04f4f 60%, #ff8e8e 100%)';
+                            e.currentTarget.style.boxShadow = '0 6px 18px #ff6b6b80';
+                          }}
+                          onMouseOut={e => {
+                            e.currentTarget.style.background = 'linear-gradient(90deg, #ff6b6b 60%, #ff8e8e 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px #ff6b6b60';
+                          }}
+                          onClick={() => handleDelete(contract.id)}
+                        >
+                          <span role="img" aria-label="poubelle">🗑️</span> SUPPRIMER
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-      {contracts.length > contractsPerPage && (
+      {filteredContracts.length > contractsPerPage && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18, marginTop: 24 }}>
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -394,11 +358,11 @@ export default function ContractsSection({ user: userProp }) {
             Précédent
           </button>
           <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 15, color: '#222' }}>
-            Page {page} / {Math.ceil(contracts.length / contractsPerPage)}
+            Page {page} / {Math.ceil(filteredContracts.length / contractsPerPage)}
           </span>
           <button
-            onClick={() => setPage(p => Math.min(Math.ceil(contracts.length / contractsPerPage), p + 1))}
-            disabled={page === Math.ceil(contracts.length / contractsPerPage)}
+            onClick={() => setPage(p => Math.min(Math.ceil(filteredContracts.length / contractsPerPage), p + 1))}
+            disabled={page === Math.ceil(filteredContracts.length / contractsPerPage)}
             style={{
               padding: '7px 18px',
               background: '#f6fcff',
@@ -407,9 +371,9 @@ export default function ContractsSection({ user: userProp }) {
               borderRadius: 8,
               fontWeight: 600,
               fontSize: 15,
-              cursor: page === Math.ceil(contracts.length / contractsPerPage) ? 'not-allowed' : 'pointer',
+              cursor: page === Math.ceil(filteredContracts.length / contractsPerPage) ? 'not-allowed' : 'pointer',
               fontFamily: 'Montserrat, sans-serif',
-              opacity: page === Math.ceil(contracts.length / contractsPerPage) ? 0.5 : 1,
+              opacity: page === Math.ceil(filteredContracts.length / contractsPerPage) ? 0.5 : 1,
               transition: 'background 0.12s',
             }}
           >

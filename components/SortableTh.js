@@ -1,13 +1,23 @@
 import React, { useMemo } from 'react';
 
-export function SortableTh({ label, sortKey, sort = {}, setSort = () => {} }) {
+export function SortableTh({ label, sortKey, sort = {}, setSort = () => {}, style: customStyle = {} }) {
   const isActive = sort?.key === sortKey;
+  const baseStyle = {
+    padding: '14px 18px',
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: '18px',
+    userSelect: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+  };
+
   return (
     <th
-      style={{ cursor: 'pointer', padding: 14, color: '#fff', fontWeight: 700, fontSize: 18, userSelect: 'none' }}
+      style={{ ...baseStyle, ...customStyle }}
       onClick={() => setSort({ key: sortKey, dir: isActive && sort?.dir === 'asc' ? 'desc' : 'asc' })}
     >
-      {label} {isActive ? (sort?.dir === 'asc' ? '▲' : '▼') : ''}
+      {label}{isActive ? (sort?.dir === 'asc' ? ' ▲' : ' ▼') : ''}
     </th>
   );
 }
@@ -18,30 +28,50 @@ export function useSortableData(data, sort) {
     const sorted = [...data];
     sorted.sort((a, b) => {
       let aVal, bVal;
+
+      const getEndDate = (contract) => {
+        let fin = contract.endDate;
+        if (!fin && contract.startDate && contract.duration) {
+          const d = new Date(contract.startDate);
+          d.setMonth(d.getMonth() + Number(contract.duration));
+          if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
+          fin = d.toISOString();
+        }
+        return fin || '';
+      };
+
       switch (sort.key) {
         case 'client':
           aVal = a.client?.name || '';
           bVal = b.client?.name || '';
           break;
-        case 'produits':
-          aVal = a.contractProducts?.map(cp => cp.product.reference).join(', ') || '';
-          bVal = b.contractProducts?.map(cp => cp.product.reference).join(', ') || '';
+        case 'user':
+          aVal = a.user?.name || '';
+          bVal = b.user?.name || '';
           break;
-        case 'debut':
+        case 'produit':
+          aVal = (a.contractProducts || []).map(cp => cp.product?.reference).join(', ');
+          bVal = (b.contractProducts || []).map(cp => cp.product?.reference).join(', ');
+          break;
+        case 'startDate':
           aVal = a.startDate || '';
           bVal = b.startDate || '';
           break;
-        case 'fin':
-          aVal = a.endDate || '';
-          bVal = b.endDate || '';
+        case 'endDate':
+          aVal = getEndDate(a);
+          bVal = getEndDate(b);
           break;
         case 'email':
           aVal = a.email || '';
           bVal = b.email || '';
           break;
-        case 'statut':
+        case 'status':
           aVal = a.status || '';
           bVal = b.status || '';
+          break;
+        case 'commentaire':
+          aVal = a.commentaire || '';
+          bVal = b.commentaire || '';
           break;
         default:
           return 0;

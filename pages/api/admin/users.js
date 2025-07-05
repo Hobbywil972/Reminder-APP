@@ -5,7 +5,7 @@ import { hash } from 'bcrypt';
 export default async function handler(req, res) {
   // Vérification du rôle admin
   const session = await getServerSession(req, res, authOptions);
-  if (!session || (session.role !== 'ADMIN' && session.role !== 'SUPERADMIN')) {
+  if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
     return res.status(403).json({ error: 'Accès refusé' });
   }
   const { PrismaClient } = require('@prisma/client');
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     if (userToDelete.role === 'ADMIN') {
       const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
       // Seul le superadmin peut supprimer le dernier admin
-      if (admins.length <= 1 && session.role !== 'SUPERADMIN') {
+      if (admins.length <= 1 && session.user.role !== 'SUPERADMIN') {
         return res.status(400).json({ error: 'Impossible de supprimer le dernier administrateur' });
       }
     }
