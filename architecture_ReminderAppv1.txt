@@ -47,6 +47,21 @@
    - La redirection après connexion est gérée par `callbackUrl` dans NextAuth, souvent initialisée depuis `pages/auth/signin.js` et pointant vers `pages/index.js` pour le dispatching.
    - La déconnexion est gérée par la fonction `signOut()` de `next-auth/react`, avec une redirection vers la page de connexion.
 
+## 3.5. Rôles et Permissions
+   L'application définit plusieurs rôles avec des niveaux d'accès différents. La vérification des permissions est effectuée à la fois côté serveur (API, `getServerSideProps`) et côté client (UI).
+
+   - **ADMIN / SUPERADMIN**: Accès complet à toutes les fonctionnalités d'administration.
+   - **SOUSCRIPTEUR**: Accès en lecture seule à un tableau de bord affichant les contrats du client auquel il est associé.
+   - **COMMERCIAL**: Rôle intermédiaire avec des permissions étendues pour la gestion des clients et des souscripteurs.
+       - **Gestion des Clients**:
+           - Peut lister, créer, **modifier** et **supprimer** des clients.
+           - L'accès est géré via le dashboard `pages/commercial/dashboard.js` et les permissions sont définies dans l'API `pages/api/admin/clients.js` pour les méthodes `GET`, `POST`, `PUT` et `DELETE`.
+       - **Gestion des Souscripteurs**:
+           - Peut lister, créer, modifier et supprimer des souscripteurs.
+           - L'interface est intégrée dans le dashboard commercial (`pages/commercial/dashboard.js`).
+           - Les permissions sont définies au niveau des APIs (`/api/admin/list-souscripteurs`, `/api/admin/souscripteurs`, `/api/admin/souscripteurs/[id]`) et des pages (`/admin/souscripteurs/creer.js`, `/admin/souscripteurs/modifier/[id].js`).
+           - A également accès à l'API `/api/admin/clients-for-select` pour peupler les formulaires.
+
 ## 4. Layouts et Structure des Pages
    - **Layout Admin (`components/Layout/AdminLayout.js`):**
      - Utilisé comme wrapper pour la plupart des pages sous `/admin`.
@@ -116,4 +131,4 @@
    - **Cohérence de l'UI:** L'utilisation de layouts partagés (`AdminLayout.js`) aide à maintenir une interface utilisateur cohérente pour les sections d'administration. Les dashboards spécifiques (`commercial/dashboard.js`, `souscripteur/dashboard.js`) ont leur propre structure adaptée à leur fonction.
    - **Gestion des Migrations Prisma :** En cas de désynchronisation entre le `schema.prisma` et la base de données (provoquant des erreurs de migration), la procédure de résolution consiste à utiliser `npx prisma db pull` pour réaligner le schéma sur l'état de la base, puis `npx prisma generate` pour mettre à jour le client Prisma. Cette étape est cruciale avant de tenter de nouvelles migrations.
 
-Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 5 juillet 2025. Il pourra nécessiter des mises à jour si l'application continue d'évoluer.
+Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 5 juillet 2025. Il a été mis à jour pour refléter les permissions étendues du rôle COMMERCIAL (gestion des clients et souscripteurs). Il pourra nécessiter des mises à jour si l'application continue d'évoluer.

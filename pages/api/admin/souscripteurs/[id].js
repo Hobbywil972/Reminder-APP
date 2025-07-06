@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session || !session.user || !['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
+  if (!session || !session.user || !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) {
     return res.status(403).json({ error: 'Accès refusé.' });
   }
 

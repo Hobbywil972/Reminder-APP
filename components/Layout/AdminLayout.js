@@ -56,7 +56,7 @@ export default function AdminLayout({ user, children, currentSection }) {
   const sidebarLinks = [
     { section: 'users', path: '/admin?section=users', label: 'Utilisateurs', icon: '👥', roles: ['ADMIN', 'SUPERADMIN'] },
     { section: 'clients', path: '/admin?section=clients', label: 'Clients', icon: '🏢', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
-    { section: 'souscripteurs', path: '/admin?section=souscripteurs', label: 'Souscripteurs', icon: '👤', roles: ['ADMIN', 'SUPERADMIN'] },
+    { section: 'souscripteurs', path: '/admin?section=souscripteurs', label: 'Souscripteurs', icon: '👤', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
     { section: 'products', path: '/admin?section=products', label: 'Produits', icon: '📦', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
     { section: 'contracts', path: '/admin?section=contracts', label: 'Contrats', icon: '📄', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
     { path: '/admin/export-csv', label: 'Export CSV', icon: '📤', roles: ['ADMIN'], isPage: true }, // Indiquer que c'est une page dédiée

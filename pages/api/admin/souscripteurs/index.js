@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
 
   // La vérification de session et de rôle est cruciale ici
-  if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+  if (!session || !session.user || !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) {
     return res.status(403).json({ error: 'Accès refusé. Seuls les administrateurs peuvent effectuer cette action.' });
   }
 

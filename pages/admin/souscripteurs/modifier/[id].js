@@ -10,7 +10,7 @@ export async function getServerSideProps(context) {
   const session = await getSession(context);
   const { id } = context.params; // Récupérer l'ID du souscripteur depuis l'URL
 
-  if (!session || !session.user || !['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
+  if (!session || !session.user || !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) {
     return {
       redirect: {
         destination: '/auth/signin',

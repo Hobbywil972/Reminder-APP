@@ -106,7 +106,7 @@ export default function ProductsSection({ user }) {
             </select>
             &nbsp;par page
           </label>
-          {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+          {['ADMIN', 'SUPERADMIN'].includes(user?.role) && (
             <button
               style={{
                 background: 'linear-gradient(90deg, #00b3e6 60%, #43e0ff 100%)',
@@ -169,7 +169,7 @@ export default function ProductsSection({ user }) {
                 >
                   Description {sort.key === 'description' ? (sort.dir === 'asc' ? '▲' : '▼') : ''}
                 </th>
-                <th style={{ padding: 14, color: '#fff', fontWeight: 700, fontSize: 18, borderTopRightRadius: 18 }}>Actions</th>
+                {['ADMIN', 'SUPERADMIN'].includes(user?.role) && <th style={{ padding: '14px 12px', border: 'none', textAlign: 'left', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 800, color: '#0090b3', borderTopRightRadius: 18 }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -178,8 +178,7 @@ export default function ProductsSection({ user }) {
                   <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopLeftRadius: idx === 0 ? 18 : 0 }}>{product.reference}</td>
                   <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{product.description}</td>
                   <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>
-                    {/* Bouton Modifier visible uniquement pour ADMIN */}
-                    {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+                    {['ADMIN', 'SUPERADMIN'].includes(user?.role) && (
                       <>
                         <button
                           style={{

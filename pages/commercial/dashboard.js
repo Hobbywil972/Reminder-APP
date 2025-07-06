@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProductsSection from '../admin/products';
 import ContractsSection from '../admin/contracts';
+import SouscripteursSection from '../admin/souscripteurs';
 import { SortableTh, useSortableData } from '../../components/SortableTh';
 import CommercialDashboardWidgets from './CommercialDashboardWidgets';
 import AddClientSPA from '../../components/AddClientSPA';
 import AddProductSPA from '../../components/AddProductSPA';
+import EditClientSPA from '../../components/EditClientSPA';
 import { useSession } from 'next-auth/react';
 
 function ClientsSection({ user }) {
@@ -39,6 +41,10 @@ function ClientsSection({ user }) {
   const filteredClients = sortedClients.filter(c => !searchName || (c.name || '').toLowerCase().includes(searchName.toLowerCase()));
 
   if (loading) return <p>Chargement...</p>;
+
+  if (mode === 'edit' && editClient) {
+    return <EditClientSPA client={editClient} onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
+  }
 
   if (mode === 'add') {
     return <AddClientSPA onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
@@ -80,13 +86,29 @@ function ClientsSection({ user }) {
             <tr style={{ background: '#00b3e6' }}>
               <SortableTh label="Nom" sortKey="name" sort={sort} setSort={setSort} />
               <SortableTh label="Contrats" sortKey="contracts" />
+              <th style={{ padding: 14, color: '#fff', fontWeight: 700, fontSize: 18, textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredClients.map((client, idx) => (
               <tr key={client.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
                 <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopLeftRadius: idx === 0 ? 18 : 0 }}>{client.name}</td>
-                <td style={{ padding: 12, border: 'none', fontSize: 17, borderBottom: '1px solid #e0e0e0', borderTopRightRadius: idx === 0 ? 18 : 0 }}>{client.contracts?.length || 0}</td>
+                <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0', textAlign: 'center' }}>{client.contracts?.length || 0}</td>
+                <td style={{ padding: '8px 14px', borderBottom: '1px solid #e0e0e0', textAlign: 'center' }}>
+                  <button
+                    onClick={() => { setEditClient(client); setMode('edit'); }}
+                    style={{
+                      background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 8,
+                      padding: '8px 16px', fontWeight: 600, fontSize: 15,
+                      fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620',
+                      cursor: 'pointer', transition: 'background 0.15s',
+                    }}
+                    onMouseOver={e => (e.currentTarget.style.background = '#0090b3')}
+                    onMouseOut={e => (e.currentTarget.style.background = '#00b3e6')}
+                  >
+                    Modifier
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -219,6 +241,23 @@ export default function CommercialDashboard() {
               </button>
             </li>
             <li>
+              <button onClick={() => setSection('souscripteurs')} style={{
+                background: section === 'souscripteurs' ? 'linear-gradient(90deg, #00b3e6 60%, #00e6d1 100%)' : 'none',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 32px',
+                textAlign: 'left',
+                width: '100%',
+                cursor: 'pointer',
+                fontWeight: section === 'souscripteurs' ? 700 : 500,
+                borderRadius: 8,
+                marginBottom: 6,
+                transition: 'background 0.2s',
+              }}>
+                Souscripteurs
+              </button>
+            </li>
+            <li>
               <button onClick={() => router.push('/auth/signin')} style={{
                 background: '#fff',
                 color: '#00b3e6',
@@ -268,6 +307,7 @@ export default function CommercialDashboard() {
           {section === 'clients' && <ClientsSection user={user} />}
           {section === 'products' && <ProductsSectionWrapper user={user} />}
           {section === 'contracts' && <ContractsSection />}
+          {section === 'souscripteurs' && <SouscripteursSection user={user} />}
         </div>
       </main>
     </div>

@@ -6,7 +6,7 @@ import AdminLayout from '../../../components/Layout/AdminLayout'; // Importer Ad
 export async function getServerSideProps(context) {
   const session = await getSession(context);
 
-  if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+  if (!session || !session.user || !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) {
     return {
       redirect: {
         destination: '/auth/signin',

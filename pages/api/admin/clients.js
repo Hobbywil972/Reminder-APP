@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (!session || !session.user || // Vérifier aussi session.user
     (req.method === 'GET' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) ||
     (req.method === 'POST' && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role)) ||
-    (['PUT', 'DELETE'].includes(req.method) && !['ADMIN', 'SUPERADMIN'].includes(session.user.role))
+    (['PUT', 'DELETE'].includes(req.method) && !['ADMIN', 'SUPERADMIN', 'COMMERCIAL'].includes(session.user.role))
   ) {
     return res.status(403).json({ error: 'Accès refusé' });
   }
