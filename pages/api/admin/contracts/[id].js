@@ -52,7 +52,12 @@ export default async function handler(req, res) {
             where: { contractId: contractId },
           });
 
-          // 2. Supprimer le contrat lui-même
+          // 2. Supprimer les rappels (Reminders) liés au contrat
+          await tx.reminder.deleteMany({
+            where: { contractId: contractId },
+          });
+
+          // 3. Supprimer le contrat lui-même
           await tx.contract.delete({
             where: { id: contractId },
           });

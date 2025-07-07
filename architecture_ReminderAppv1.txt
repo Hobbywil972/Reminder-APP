@@ -10,12 +10,15 @@
      - `components/`: Contient les composants React réutilisables.
        - `Layout/AdminLayout.js`: Layout principal pour la plupart des pages de l'interface d'administration. Gère la sidebar de navigation et l'affichage des informations de l'utilisateur.
        - `AddClientSPA.js`, `AddProductSPA.js`, `AddContractSPA.js`, etc. : Composants pour les formulaires d'ajout/modification en mode Single Page Application (SPA), améliorant l'expérience utilisateur.
+         - Le composant `AddContractSPA.js` a été optimisé : le champ de recherche de produit est vidé après chaque ajout, et le champ email pour l'alerte est pré-rempli avec l'email de l'utilisateur connecté.
        - `SortableTh.js`: Composant pour créer des en-têtes de tableau triables.
        - D'autres composants utilitaires (ex: modales, éléments de formulaire spécifiques).
      - `pages/`: Définit la structure de routing de l'application Next.js.
        - `admin/`: Contient les pages et la logique de l'interface d'administration.
          - `index.js`: Point d'entrée principal de l'interface d'administration, qui affiche dynamiquement les sections (utilisateurs, clients, produits, etc.) en fonction d'un paramètre d'URL `section`.
          - `clients.js`, `products.js`, `contracts.js`, `souscripteurs.js`, `users.js`: Fichiers (ou composants importés) qui définissent le contenu de chaque section de l'interface d'administration.
+           - La section `contracts.js` a été améliorée avec des filtres par commercial, par date de début et de fin de contrat, ainsi que la possibilité de supprimer des contrats.
+           - La section `clients.js` a vu son filtre de recherche corrigé pour permettre une recherche par sous-chaîne plus intuitive.
          - `creer.js` (souvent dans des sous-dossiers comme `admin/souscripteurs/creer.js`): Pages dédiées à la création de nouvelles entités.
          - `[id].js` (souvent dans des sous-dossiers comme `admin/souscripteurs/[id].js`): Pages dynamiques pour la visualisation ou la modification d'une entité spécifique.
        - `api/`: Contient les endpoints de l'API Next.js.
