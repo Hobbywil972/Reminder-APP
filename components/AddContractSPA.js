@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-export default function AddContractSPA({ clients, products, onSuccess, onCancel, initialContract }) {
-  const [email, setEmail] = useState(initialContract ? initialContract.email || '' : '');
+export default function AddContractSPA({ clients, products, onSuccess, onCancel, initialContract, userEmail }) {
+    const [email, setEmail] = useState(initialContract ? initialContract.email || '' : userEmail || '');
   // Alerte renouvellement (mois avant fin)
   const [renewalAlertMonths, setRenewalAlertMonths] = useState(initialContract ? initialContract.renewalAlertMonths || 1 : 1);
   const [clientId, setClientId] = useState(initialContract ? initialContract.clientId?.toString() || (initialContract.client?.id?.toString?.() || '') : '');
@@ -62,6 +62,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
     setProductsWithQuantities(pqs => [...pqs, { productId: Number(selectedProductId), quantity: selectedQuantity }]);
     setSelectedProductId('');
     setSelectedQuantity(1);
+    setProductSearch('');
     setError('');
   };
 

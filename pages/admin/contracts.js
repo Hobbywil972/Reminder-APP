@@ -11,7 +11,7 @@ function formatDateFr(dateStr) {
 }
 
 export default function ContractsSection({ user: userProp }) {
-  const { data: session } = useSession();
+    const { data: session } = useSession();
   const user = userProp || session?.user;
 
   const [sort, setSort] = useState({ key: 'client', dir: 'asc' });
@@ -27,9 +27,10 @@ export default function ContractsSection({ user: userProp }) {
   // Filtres recherche
   const [searchClient, setSearchClient] = useState('');
   const [searchReference, setSearchReference] = useState('');
-  const [dateFinStart, setDateFinStart] = useState('');
-  const [dateFinEnd, setDateFinEnd] = useState('');
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
   const [searchCommentaire, setSearchCommentaire] = useState('');
+  const [searchCommercial, setSearchCommercial] = useState('');
 
   // Hook trié
   const sortedContracts = useSortableData(contracts, sort);
@@ -41,6 +42,11 @@ export default function ContractsSection({ user: userProp }) {
     // Filtre référence
     const refMatch = !searchReference || (contract.contractProducts || []).some(cp => (cp.product?.reference || '').toLowerCase().includes(searchReference.toLowerCase()));
     // Filtre date de fin
+    let dateMatch = true;
+    if (searchStartDate) {
+      dateMatch = dateMatch && contract.startDate && contract.startDate.slice(0, 10) >= searchStartDate;
+    }
+
     let fin = contract.endDate;
     if (!fin && contract.startDate && contract.duration) {
       const d = new Date(contract.startDate);
@@ -48,13 +54,14 @@ export default function ContractsSection({ user: userProp }) {
       if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
       fin = d.toISOString();
     }
-    let dateMatch = true;
-    if (dateFinStart) dateMatch = dateMatch && fin && fin.slice(0,10) >= dateFinStart;
-    if (dateFinEnd) dateMatch = dateMatch && fin && fin.slice(0,10) <= dateFinEnd;
+    if (searchEndDate) {
+      dateMatch = dateMatch && fin && fin.slice(0, 10) <= searchEndDate;
+    }
 
     const commentaireMatch = !searchCommentaire || (contract.commentaire || '').toLowerCase().includes(searchCommentaire.toLowerCase());
+    const commercialMatch = !searchCommercial || (contract.user?.name || '').toLowerCase().includes(searchCommercial.toLowerCase());
 
-    return clientMatch && refMatch && dateMatch && commentaireMatch;
+    return clientMatch && refMatch && dateMatch && commentaireMatch && commercialMatch;
   });
 
   const paginatedContracts = filteredContracts.slice((page - 1) * contractsPerPage, page * contractsPerPage);
@@ -73,6 +80,27 @@ export default function ContractsSection({ user: userProp }) {
     if (!contentType.includes('application/json')) throw new Error('Session expirée ou accès refusé');
     return res.json();
   }
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Voulez-vous vraiment supprimer ce contrat ? Cette action est irréversible.')) {
+      try {
+        const res = await fetch(`/api/admin/contracts/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await safeJson(res);
+        if (res.ok) {
+          alert(data.message || 'Contrat supprimé avec succès');
+          setContracts(prev => prev.filter(c => c.id !== id));
+        } else {
+          throw new Error(data.error || 'Erreur lors de la suppression');
+        }
+      } catch (error) {
+        console.error('Erreur de suppression:', error);
+        alert(`Erreur: ${error.message}`);
+      }
+    }
+  };
 
   const fetchAll = async () => {
     setLoading(true);
@@ -118,13 +146,7 @@ export default function ContractsSection({ user: userProp }) {
 
   if (mode === 'add' || (mode === 'edit' && editContract)) {
     return (
-      <AddContractSPA
-        clients={clients}
-        products={products}
-        initialContract={editContract}
-        onSuccess={() => { setMode('list'); setEditContract(null); fetchAll(); }}
-        onCancel={() => { setMode('list'); setEditContract(null); }}
-      />
+      <AddContractSPA userEmail={user?.email} clients={clients} products={products} initialContract={editContract} onSuccess={() => { setMode('list'); setEditContract(null); fetchAll(); }} onCancel={() => { setMode('list'); setEditContract(null); }} />
     );
   }
 
@@ -145,15 +167,21 @@ export default function ContractsSection({ user: userProp }) {
           <input type="text" value={searchCommentaire} onChange={e => setSearchCommentaire(e.target.value)} placeholder="Rechercher..." style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 200 }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Fin contrat (début)</label>
-          <input type="date" value={dateFinStart} onChange={e => setDateFinStart(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Commercial</label>
+          <input type="text" value={searchCommercial} onChange={e => setSearchCommercial(e.target.value)} placeholder="Rechercher..." style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 200 }} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Fin contrat (fin)</label>
-          <input type="date" value={dateFinEnd} onChange={e => setDateFinEnd(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Début contrat (après le)</label>
+            <input type="date" value={searchStartDate} onChange={e => setSearchStartDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 4 }}>Fin contrat (avant le)</label>
+            <input type="date" value={searchEndDate} onChange={e => setSearchEndDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, width: 180 }} />
+          </div>
         </div>
         <button
-          onClick={() => { setSearchClient(''); setSearchReference(''); setDateFinStart(''); setDateFinEnd(''); setSearchCommentaire(''); }}
+          onClick={() => { setSearchClient(''); setSearchReference(''); setSearchCommentaire(''); setSearchCommercial(''); setSearchStartDate(''); setSearchEndDate(''); }}
           style={{
             padding: '9px 24px', background: '#f6fcff', color: '#00b3e6', border: '1.5px solid #cce8f6',
             borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',

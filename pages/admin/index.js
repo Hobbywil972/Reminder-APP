@@ -348,7 +348,7 @@ function ClientsSection() {
                 puis on applique la pagination (slice).
               */}
               {(Array.isArray(clients) ? clients : [])
-                .filter(c => c.name && c.name.toLowerCase().includes(searchName.toLowerCase())) // Filtrage dynamique par nom
+                .filter(client => client.name && client.name.toLowerCase().includes(searchName.toLowerCase()))
                 .sort((a, b) => { // Tri dynamique par nom
                   if (sort.key === 'name') {
                     if (a.name.toLowerCase() < b.name.toLowerCase()) return sort.dir === 'asc' ? -1 : 1;
