@@ -84,9 +84,10 @@ export default function ContractsSection({ user: userProp }) {
   const handleDelete = async (id) => {
     if (window.confirm('Voulez-vous vraiment supprimer ce contrat ? Cette action est irréversible.')) {
       try {
-        const res = await fetch(`/api/admin/contracts/${id}`, {
+                const res = await fetch(`/api/admin/contracts/${id}`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin' // Important pour l'authentification sur Vercel
         });
         const data = await safeJson(res);
         if (res.ok) {
