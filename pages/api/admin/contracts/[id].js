@@ -1,17 +1,13 @@
 
-import { getToken } from 'next-auth/jwt';
-
-const secret = process.env.NEXTAUTH_SECRET;
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]';
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-    const token = await getToken({ req, secret });
-  console.log('--- Contenu du token pour suppression contrat ---');
-  console.log(JSON.stringify(token, null, 2));
-  console.log('---------------------------------------------');
+  const session = await getServerSession(req, res, authOptions);
 
-    if (!token || !token.user || (token.user.role !== 'ADMIN' && token.user.role !== 'SUPERADMIN')) {
+  if (!session || !session.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
     return res.status(401).json({ error: 'Accès non autorisé.' });
   }
 
