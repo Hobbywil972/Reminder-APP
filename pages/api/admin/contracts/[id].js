@@ -6,7 +6,10 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  const token = await getToken({ req, secret });
+    const token = await getToken({ req, secret });
+  console.log('--- Contenu du token pour suppression contrat ---');
+  console.log(JSON.stringify(token, null, 2));
+  console.log('---------------------------------------------');
 
     if (!token || !token.user || (token.user.role !== 'ADMIN' && token.user.role !== 'SUPERADMIN')) {
     return res.status(401).json({ error: 'Accès non autorisé.' });
