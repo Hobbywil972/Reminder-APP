@@ -73,13 +73,44 @@ export default function ProductsSection({ user }) {
       <div style={{ background: '#fff', boxShadow: '0 2px 16px #00b3e610', borderRadius: 16, padding: '12px 24px', marginBottom: 18, display: 'flex', alignItems: 'flex-end', gap: 24 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Référence</label>
-          <input
-            type="text"
-            placeholder="Rechercher par référence..."
-            value={searchReference}
-            onChange={e => { setSearchReference(e.target.value); setPage(1); }}
-            style={{ padding: 8, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', minWidth: 180, background: '#f6fcff' }}
-          />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Rechercher par référence..."
+              value={searchReference}
+              onChange={e => { setSearchReference(e.target.value); setPage(1); }}
+              style={{ 
+                padding: '8px 30px 8px 8px',
+                borderRadius: 8, 
+                border: '1.5px solid #cce8f6', 
+                fontSize: 15, 
+                fontFamily: 'Montserrat, sans-serif', 
+                minWidth: 180, 
+                background: '#f6fcff' 
+              }}
+            />
+            {searchReference && (
+              <button
+                onClick={() => setSearchReference('')}
+                title="Effacer la recherche"
+                style={{
+                  position: 'absolute',
+                  right: '5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0',
+                  fontSize: '18px',
+                  lineHeight: '1',
+                  color: '#999',
+                }}
+              >
+                &#x2715;
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>

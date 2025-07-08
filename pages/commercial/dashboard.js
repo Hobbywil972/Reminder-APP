@@ -56,13 +56,44 @@ function ClientsSection({ user }) {
       <div style={{ background: '#fff', boxShadow: '0 2px 16px #00b3e610', borderRadius: 16, padding: '12px 24px', marginBottom: 18, display: 'flex', alignItems: 'flex-end', gap: 24 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Nom</label>
-          <input
-            type="text"
-            placeholder="Rechercher par nom..."
-            value={searchName}
-            onChange={e => { setSearchName(e.target.value); }}
-            style={{ padding: 8, borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, fontFamily: 'Montserrat, sans-serif', minWidth: 180, background: '#f6fcff' }}
-          />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Rechercher par nom..."
+              value={searchName}
+              onChange={e => { setSearchName(e.target.value); }}
+              style={{ 
+                padding: '8px 30px 8px 8px',
+                borderRadius: 8, 
+                border: '1.5px solid #cce8f6', 
+                fontSize: 15, 
+                fontFamily: 'Montserrat, sans-serif', 
+                minWidth: 180, 
+                background: '#f6fcff' 
+              }}
+            />
+            {searchName && (
+              <button
+                onClick={() => setSearchName('')}
+                title="Effacer la recherche"
+                style={{
+                  position: 'absolute',
+                  right: '5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0',
+                  fontSize: '18px',
+                  lineHeight: '1',
+                  color: '#999',
+                }}
+              >
+                &#x2715;
+              </button>
+            )}
+          </div>
         </div>
         <button
           style={{ background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 16, fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620', cursor: 'pointer', transition: 'background 0.15s', marginLeft: 'auto' }}
