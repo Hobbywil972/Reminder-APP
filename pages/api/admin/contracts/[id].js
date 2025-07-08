@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   const token = await getToken({ req, secret });
 
-  if (!token || (token.role !== 'ADMIN' && token.role !== 'SUPERADMIN')) {
+    if (!token || !token.user || (token.user.role !== 'ADMIN' && token.user.role !== 'SUPERADMIN')) {
     return res.status(401).json({ error: 'Accès non autorisé.' });
   }
 
