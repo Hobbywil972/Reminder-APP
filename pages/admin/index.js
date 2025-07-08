@@ -264,13 +264,44 @@ function ClientsSection() {
           {/* Champ de recherche pour filtrer dynamiquement la liste des clients par nom */}
           <div style={{ background: '#e6f7fa', boxShadow: '0 2px 16px #00b3e610', borderRadius: 12, padding: '7px 18px', display: 'flex', alignItems: 'center', gap: 14, maxWidth: 320 }}>
             <label style={{ fontWeight: 700, color: '#0090b3', fontSize: 15, marginRight: 8 }}>🔎 Nom&nbsp;</label>
-            <input
-              type="text"
-              placeholder="Recherche par nom..."
-              value={searchName}
-              onChange={e => { setSearchName(e.target.value); setPage(1); }} // Met à jour l’état searchName et réinitialise la page
-              style={{ padding: 8, borderRadius: 8, border: '1.5px solid #00b3e6', fontSize: 16, fontFamily: 'Montserrat, sans-serif', minWidth: 120, background: '#fff' }}
-            />
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Recherche par nom..."
+                value={searchName}
+                onChange={e => { setSearchName(e.target.value); setPage(1); }}
+                style={{ 
+                  padding: '8px 30px 8px 8px', // Ajout de padding à droite pour le bouton
+                  borderRadius: 8, 
+                  border: '1.5px solid #00b3e6', 
+                  fontSize: 16, 
+                  fontFamily: 'Montserrat, sans-serif', 
+                  minWidth: 120, 
+                  background: '#fff' 
+                }}
+              />
+              {searchName && (
+                <button
+                  onClick={() => { setSearchName(''); setPage(1); }}
+                  title="Effacer la recherche"
+                  style={{
+                    position: 'absolute',
+                    right: '5px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0',
+                    fontSize: '18px',
+                    lineHeight: '1',
+                    color: '#999',
+                  }}
+                >
+                  &#x2715;
+                </button>
+              )}
+            </div>
           </div>
           <label style={{ fontWeight: 700, color: '#00b3e6', fontFamily: 'Montserrat, sans-serif', fontSize: 15, display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '1.5px solid #00b3e6', borderRadius: 10, boxShadow: '0 2px 8px #00b3e610', padding: '6px 20px', marginRight: 0 }}>
             <span role="img" aria-label="voir">👁️</span> Afficher&nbsp;
