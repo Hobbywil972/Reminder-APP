@@ -2,6 +2,17 @@ import { useState, useEffect, useMemo } from 'react';
 import AddContractSPA from './AddContractSPA';
 import { SortableTh, useSortableData } from './SortableTh';
 
+function getEndDate(contract) {
+  if (contract.endDate) return new Date(contract.endDate);
+  if (contract.startDate && contract.duration) {
+    const d = new Date(contract.startDate);
+    d.setMonth(d.getMonth() + Number(contract.duration));
+    if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
+    return d;
+  }
+  return null;
+}
+
 function formatDateFr(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -24,6 +35,7 @@ export default function CommercialContractsSection({ user, departementId }) {
   const [searchReference, setSearchReference] = useState('');
   const [searchCommercial, setSearchCommercial] = useState('');
   const [searchComment, setSearchComment] = useState('');
+  const [searchStatus, setSearchStatus] = useState('');
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
 
@@ -67,6 +79,17 @@ export default function CommercialContractsSection({ user, departementId }) {
       // Commercial
       const commercialMatch = !searchCommercial || (contract.user?.name || '').toLowerCase().includes(searchCommercial.toLowerCase());
 
+      // Statut (y compris calcul TERMINE)
+      const effectiveStatus = (() => {
+        const end = getEndDate(contract);
+        const now = new Date();
+        if (contract.status === 'EN_COURS' && end && new Date(end) < new Date(now.getTime() - 24*60*60*1000)) {
+          return 'TERMINE';
+        }
+        return contract.status;
+      })();
+      const statusMatch = !searchStatus || effectiveStatus === searchStatus;
+
       // Commentaire
       const commentMatch = !searchComment || (contract.commentaire || '').toLowerCase().includes(searchComment.toLowerCase());
 
@@ -86,9 +109,9 @@ export default function CommercialContractsSection({ user, departementId }) {
         dateMatch = dateMatch && fin && fin.slice(0, 10) <= searchEndDate;
       }
 
-      return clientMatch && refMatch && commercialMatch && commentMatch && dateMatch;
+      return clientMatch && refMatch && commercialMatch && commentMatch && dateMatch && statusMatch;
     });
-  }, [sortedContracts, searchClient, searchReference, searchCommercial, searchComment, searchStartDate, searchEndDate]);
+  }, [sortedContracts, searchClient, searchReference, searchCommercial, searchComment, searchStartDate, searchEndDate, searchStatus]);
 
   const paginatedContracts = filteredContracts.slice((page - 1) * contractsPerPage, page * contractsPerPage);
 
@@ -118,16 +141,7 @@ export default function CommercialContractsSection({ user, departementId }) {
 
   // Bouton de suppression retiré pour le rôle COMMERCIAL (22/10/2025) – la fonction handleDelete a été supprimée.
 
-  const getEndDate = (contract) => {
-    if (contract.endDate) return new Date(contract.endDate);
-    if (contract.startDate && contract.duration) {
-      const d = new Date(contract.startDate);
-      d.setMonth(d.getMonth() + Number(contract.duration));
-      if (d.getDate() !== new Date(contract.startDate).getDate()) d.setDate(0);
-      return d;
-    }
-    return null;
-  };
+
 
   const formatDate = (date) => {
     if (!date) return '';
@@ -175,7 +189,16 @@ export default function CommercialContractsSection({ user, departementId }) {
           Fin contrat (avant le)
           <input type="date" value={searchEndDate} onChange={e => setSearchEndDate(e.target.value)} style={{ width: '100%', marginTop: '4px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
         </label>
-        <button onClick={() => { setSearchClient(''); setSearchReference(''); setSearchCommercial(''); setSearchComment(''); setSearchStartDate(''); setSearchEndDate(''); }} style={{ padding: '8px 16px', background: '#e2eff4', color: '#005f73', border: '1px solid #00b3e6', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>Réinitialiser</button>
+        <label>
+          Statut
+          <select value={searchStatus} onChange={e => setSearchStatus(e.target.value)} style={{ width: '100%', marginTop: '4px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}>
+            <option value="">Tous</option>
+            <option value="EN_COURS">En cours</option>
+            <option value="RESILIE">Résilié</option>
+            <option value="TERMINE">Terminé</option>
+          </select>
+        </label>
+        <button onClick={() => { setSearchClient(''); setSearchReference(''); setSearchCommercial(''); setSearchComment(''); setSearchStartDate(''); setSearchEndDate(''); setSearchStatus(''); }} style={{ padding: '8px 16px', background: '#e2eff4', color: '#005f73', border: '1px solid #00b3e6', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>Réinitialiser</button>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -210,7 +233,14 @@ export default function CommercialContractsSection({ user, departementId }) {
                       <td style={{ padding: '14px 16px' }}>{formatDate(contract.startDate)}</td>
                       <td style={{ padding: '14px 16px' }}>{formatDate(getEndDate(contract))}</td>
                       <td style={{ padding: '14px 16px' }}>{contract.email || 'N/A'}</td>
-                      <td style={{ padding: '14px 16px' }}>{contract.status || 'N/A'}</td>
+                      <td style={{ padding: '14px 16px' }}>{(() => {
+                          const end = getEndDate(contract);
+                          const now = new Date();
+                          if (contract.status === 'EN_COURS' && end && new Date(end) < new Date(now.getTime() - 24*60*60*1000)) {
+                            return 'TERMINE';
+                          }
+                          return contract.status;
+                      })() || 'N/A'}</td>
                       <td style={{ padding: '14px 16px' }}>{contract.commentaire || 'N/A'}</td>
                   <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                                         <button onClick={() => { setMode('edit'); setEditContract(contract); }} style={{ background: 'linear-gradient(90deg, #34d399, #2bb889)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer' }}>MODIFIER</button>

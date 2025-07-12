@@ -212,7 +212,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'ID manquant' });
     }
     try {
-      // Supprimer les liens ContractProduct avant de supprimer le contrat (évite les erreurs de contrainte)
+      // Supprimer les reminders et les ContractProduct avant de supprimer le contrat (évite les erreurs de contrainte)
+      await prisma.reminder.deleteMany({ where: { contractId: id } });
       await prisma.contractProduct.deleteMany({ where: { contractId: id } });
       await prisma.contract.delete({ where: { id } });
       return res.status(204).end();

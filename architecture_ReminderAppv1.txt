@@ -220,3 +220,87 @@ Ce document est basé sur ma compréhension actuelle de l'application ReminderAP
 Ce chapitre centralise tous les éléments nécessaires pour manipuler la base de données de production sans avoir à redemander les informations sensibles.
 
 Il pourra nécessiter des mises à jour si l'application continue d'évoluer.
+
+## 13. Notifications par Email & Cron (12 juillet 2025)
+
+### 13.1 Vue d’ensemble
+Le système de notifications envoie automatiquement des emails de rappel (renouvellement) ou d’expiration de contrat. Il repose sur :
+1. Le **modèle Prisma `Reminder`** qui stocke les alarmes.
+2. Une **Scheduled Function Vercel** (cron) définie dans `vercel.json`.
+3. L’endpoint **`/api/cron-send-notifications`** qui exécute la logique d’envoi.
+4. Les modèles d’email **`reminder`** et **`expiration`** dans la table `EmailTemplate`.
+
+### 13.2 Création / Mise à jour d’un Reminder
+| Étape | Fichier | Action |
+|-------|---------|--------|
+| Création de contrat | `pages/api/admin/contracts.js` (`POST`) | Après la création du contrat, un `Reminder` est automatiquement créé si `renewalAlertMonths > 0`. |
+| Modification de contrat | `pages/api/admin/contracts.js` (`PUT`) | Si le contrat est modifié, le `Reminder` existant est mis à jour (dates, email, offset). |
+
+Le calcul de la **`nextAlarmDate`** suit la formule :
+```
+nextAlarmDate = startDate + duration(months) - renewalAlertMonths(months)
+```
+Elle est normalisée à minuit (00:00:00) pour un matching plus simple.
+
+### 13.3 Structure du modèle `Reminder`
+- `contractId` : FK vers le contrat.
+- `userId` : commercial responsable (utilisé pour l’historique).
+- `email` : adresse destinataire (contrat/client).
+- `alarmOffset` : nombre de mois avant la fin du contrat où envoyer le rappel.
+- `nextAlarmDate` : date toujours arrondie à minuit.
+- `active` : booléen permettant de désactiver l’alarme.
+- `sentDates` : tableau de dates ISO où un mail a déjà été envoyé (évite les doublons la même journée).
+
+### 13.4 Cron Vercel
+`vercel.json` :
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron-send-notifications",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
+```
+- **Planification** : tous les jours à 05:00 UTC (fenêtre flexible ±1h sur le plan Hobby).
+- **Exécution** : Vercel effectue un appel `POST` vers l’endpoint.
+- **Administration** : Project ▸ *Settings* ▸ *Cron Jobs* (boutons **Run** & **View Logs**).
+
+### 13.5 Traitement dans `/api/cron-send-notifications`
+1. Récupère la date du jour (`today`) en UTC, arrondie à minuit.
+2. `Prisma.reminder.findMany({ where: { nextAlarmDate: today, active: true, contract: { status: { not: 'RESILIE' } } } })`
+3. Boucle sur chaque rappel :
+   - Récupère le contrat, le client et les produits (jointures incluses).
+   - Choisit le template : `reminder` (rappel simple) ou `expiration` (fin de contrat) selon le statut.
+   - Appelle `sendMail({ to: reminder.email, template, params })` (wrap de **Nodemailer**).
+   - Push `today` dans `sentDates` et (optionnel) recalcule la prochaine date si rappel récurrent.
+4. Retourne un JSON : `{ remindersSent: N }` et logue les erreurs.
+
+### 13.6 Configuration SMTP (`config.smtp.json`)
+```json
+{
+  "host": "smtp.infodom.com",
+  "port": 587,
+  "secure": false,
+  "auth": {
+    "user": "no-reply@infodom.com",
+    "pass": "********"
+  }
+}
+```
+Le fichier est **server-side only** ; il n’est jamais embarqué côté client.
+
+### 13.7 Surveillance & Tests
+- **Run manuel** : bouton *Run* depuis *Settings ▸ Cron Jobs* ou `curl -X POST https://<domain>/api/cron-send-notifications`.
+- **Logs** : bouton *View Logs* ou l’onglet *Functions ▸ Scheduled*.
+- **Alertes** : en cas d’échec, Vercel marque la run en rouge et affiche la stacktrace.
+
+### 13.8 Points d’extension
+- Ajouter un champ `lastSentAt` si besoin d’historique global.
+- Support multi-langue en dupliquant les templates email.
+- Possibilité de planifier plusieurs crons (ex : hebdo, mensuel) via `vercel.json`.
+
+---
+Fin de la section 13.
+

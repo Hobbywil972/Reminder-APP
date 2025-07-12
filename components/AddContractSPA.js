@@ -371,6 +371,15 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
           )}
           <label style={{ fontWeight: 'bold' }}>Alerte de renouvellement (mois avant fin)</label>
           <input type="number" min={1} max={12} value={renewalAlertMonths} onChange={e => setRenewalAlertMonths(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }} />
+          {initialContract && (
+            <>
+              <label style={{ fontWeight: 'bold' }}>Statut</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} style={{ padding: 10, border: '1px solid #ccc', borderRadius: 4 }}>
+                <option value="EN_COURS">En cours</option>
+                <option value="RESILIE">Résilié</option>
+              </select>
+            </>
+          )}
           <label style={{ fontWeight: 'bold' }}>Commentaire</label>
           <textarea
             value={commentaire}
