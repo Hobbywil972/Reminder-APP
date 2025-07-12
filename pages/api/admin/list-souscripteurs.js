@@ -13,10 +13,23 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
+      const whereClause = {
+        role: 'SOUSCRIPTEUR',
+      };
+
+      // Si l'utilisateur est un commercial, filtrer par son département
+      if (session.user.role === 'COMMERCIAL') {
+        if (!session.user.departementId) {
+          // Un commercial doit être rattaché à un département pour voir des données.
+          return res.status(200).json([]);
+        }
+        whereClause.client = {
+          departementId: session.user.departementId,
+        };
+      }
+
       const souscripteurs = await prisma.user.findMany({
-        where: {
-          role: 'SOUSCRIPTEUR',
-        },
+        where: whereClause,
         orderBy: {
           name: 'asc',
         },
@@ -27,11 +40,17 @@ export default async function handler(req, res) {
             role: true,
             clientId: true, // Le champ clé étrangère
             createdAt: true,
-            // Le mot de passe n'est pas sélectionné, ce qui est correct
             client: { // Sélectionner les champs du client associé
               select: {
                 id: true,
                 name: true,
+                departementId: true,
+                departement: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
         }

@@ -78,6 +78,8 @@ export async function getServerSideProps(context) {
 
 export default function EditSouscripteurPage({ user, souscripteurData, clientsData }) { 
   const router = useRouter();
+  // Détermine l'URL de retour en fonction du rôle (Commercial vs Admin)
+  const listPath = user.role === 'COMMERCIAL' ? '/commercial/dashboard?section=souscripteurs' : '/admin?section=souscripteurs';
   const [name, setName] = useState(souscripteurData.name || '');
   const [email, setEmail] = useState(souscripteurData.email || '');
   const [password, setPassword] = useState('');
@@ -131,7 +133,7 @@ export default function EditSouscripteurPage({ user, souscripteurData, clientsDa
         setEmail(updatedSouscripteur.email);
         setClientId(updatedSouscripteur.clientId);
         setPassword(''); 
-        setTimeout(() => router.push('/admin?section=souscripteurs'), 2000);
+        setTimeout(() => router.push(listPath), 2000);
       } else {
         const errorData = await res.json();
         setError(errorData.error || `Erreur ${res.status} lors de la mise à jour.`);
@@ -216,7 +218,7 @@ export default function EditSouscripteurPage({ user, souscripteurData, clientsDa
             
             <button
               type="button"
-              onClick={() => router.push('/admin?section=souscripteurs')}
+              onClick={() => router.push(listPath)}
               style={{
                 marginTop: 20, background: 'transparent', color: '#555',
                 border: '1.5px solid #ddd', padding: '11px 0', borderRadius: 10,

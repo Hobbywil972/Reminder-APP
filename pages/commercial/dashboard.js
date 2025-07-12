@@ -1,17 +1,44 @@
-import { getToken } from 'next-auth/jwt';
+import { getSession } from 'next-auth/react';
+import { PrismaClient } from '@prisma/client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProductsSection from '../admin/products';
-import ContractsSection from '../admin/contracts';
+import CommercialContractsSection from '../../components/CommercialContractsSection';
 import SouscripteursSection from '../admin/souscripteurs';
 import { SortableTh, useSortableData } from '../../components/SortableTh';
 import CommercialDashboardWidgets from './CommercialDashboardWidgets';
 import AddClientSPA from '../../components/AddClientSPA';
 import AddProductSPA from '../../components/AddProductSPA';
 import EditClientSPA from '../../components/EditClientSPA';
-import { useSession } from 'next-auth/react';
 
-function ClientsSection({ user }) {
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  if (!session || session.user.role !== 'COMMERCIAL') {
+    return {
+      redirect: {
+        destination: '/auth/signin',
+        permanent: false,
+      },
+    };
+  }
+
+  const prisma = new PrismaClient();
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { departementId: true },
+  });
+
+  return {
+    props: {
+      user: session.user,
+      departementId: user.departementId,
+    },
+  };
+}
+
+function ClientsSection({ user, departementId }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('list'); // "list", "add", "edit"
@@ -19,14 +46,30 @@ function ClientsSection({ user }) {
   const [searchName, setSearchName] = useState('');
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
 
-  useEffect(() => {
-    fetch('/api/admin/clients', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setClients(data);
-        setLoading(false);
-      });
-  }, []);
+      useEffect(() => {
+    if (departementId) {
+      setLoading(true);
+      fetch(`/api/commercial/clients?departementId=${departementId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Erreur réseau');
+          }
+          return res.json();
+        })
+        .then(data => {
+          setClients(data);
+        })
+        .catch(error => {
+          console.error("Erreur lors de la récupération des clients:", error);
+          // Gérer l'état d'erreur dans l'UI si nécessaire
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [departementId]);
 
   // Tri et filtrage
   const sortedClients = [...clients].sort((a, b) => {
@@ -43,11 +86,11 @@ function ClientsSection({ user }) {
   if (loading) return <p>Chargement...</p>;
 
   if (mode === 'edit' && editClient) {
-    return <EditClientSPA client={editClient} onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
+    return <EditClientSPA client={editClient} departementFixed={true} onSuccess={() => { setMode('list'); setEditClient(null); }} onCancel={() => { setMode('list'); setEditClient(null); }} />;
   }
 
   if (mode === 'add') {
-    return <AddClientSPA onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
+    return <AddClientSPA user={user} departementId={departementId} onSuccess={() => { setMode('list'); window.location.reload(); }} onCancel={() => setMode('list')} />;
   }
 
   return (
@@ -160,40 +203,9 @@ function ProductsSectionWrapper({ user }) {
   return <ProductsSection key={refreshKey} user={user} onAddProduct={() => setMode('add')} />;
 }
 
-export default function CommercialDashboard() {
-  const { data: session, status } = useSession();
+export default function CommercialDashboard({ user, departementId }) {
   const router = useRouter();
   const [section, setSection] = useState('dashboard'); // 'dashboard', 'clients', 'products', 'contracts'
-
-  useEffect(() => {
-    // Si non authentifié après chargement, rediriger vers signin
-    if (status === 'unauthenticated') {
-       console.log('[CommercialDashboard][Client] User unauthenticated, redirecting to signin.');
-      router.replace('/auth/signin');
-    }
-    // Si authentifié mais pas le bon rôle (sécurité supplémentaire), rediriger
-    // Note : Ceci ne devrait pas arriver grâce à /dashboard.js, mais c'est une bonne pratique
-    if (status === 'authenticated' && session?.user?.role !== 'COMMERCIAL') {
-        console.log(`[CommercialDashboard][Client] User authenticated but incorrect role (${session.user?.role}), redirecting.`);
-        // Rediriger vers une page d'erreur ou /dashboard ?
-        router.replace('/dashboard'); // Ou une page '/unauthorized'
-    }
-  }, [status, session, router]);
-
-  // Afficher un chargement pendant que la session est vérifiée
-  if (status === 'loading') {
-    return <p>Chargement de la session...</p>;
-  }
-
-  // Ne pas rendre le contenu si non authentifié ou mauvais rôle (redirection en cours)
-  if (status !== 'authenticated' || session?.user?.role !== 'COMMERCIAL') {
-      // Afficher null ou un message pendant que la redirection via useEffect se fait
-      return null; 
-  }
-
-  // Si authentifié et bon rôle, afficher le dashboard
-  // Utiliser session.user pour les infos utilisateur
-  const user = session.user;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Montserrat, Segoe UI, Arial, sans-serif', background: '#f6fcff' }}>
@@ -334,10 +346,10 @@ export default function CommercialDashboard() {
           </div>
         </header>
         <div style={{ padding: '0 40px 40px 40px' }}>
-          {section === 'dashboard' && <CommercialDashboardWidgets setSection={setSection} />}
-          {section === 'clients' && <ClientsSection user={user} />}
+          {section === 'dashboard' && <CommercialDashboardWidgets user={user} departementId={departementId} setSection={setSection} />}
+          {section === 'clients' && <ClientsSection user={user} departementId={departementId} />}
           {section === 'products' && <ProductsSectionWrapper user={user} />}
-          {section === 'contracts' && <ContractsSection />}
+          {section === 'contracts' && <CommercialContractsSection user={user} departementId={departementId} />}
           {section === 'souscripteurs' && <SouscripteursSection user={user} />}
         </div>
       </main>

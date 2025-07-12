@@ -1,0 +1,65 @@
+# Release Notes - ReminderApp v2.5
+
+**Date de la version :** 10 juillet 2025
+
+**Thème principal :** Amélioration de l'interface d'administration - Gestion des Clients
+
+Cette version se concentre sur l'amélioration de l'ergonomie et de la fonctionnalité de la section "Clients" dans le panneau d'administration. L'objectif était de remplacer une fonctionnalité de tri peu pratique par un système de filtrage plus intuitif et de corriger plusieurs bogues associés.
+
+---
+
+### ✨ Nouvelles fonctionnalités et améliorations
+
+1.  **Filtre par Département :**
+    *   Le tri par département, qui se faisait en cliquant sur l'en-tête de la colonne, a été remplacé par une **liste déroulante de filtrage** située au-dessus du tableau.
+    *   Les administrateurs peuvent désormais sélectionner un département pour n'afficher que les clients qui y sont associés, ce qui rend la recherche et la gestion beaucoup plus rapides.
+
+2.  **Interface Utilisateur Épurée et Réorganisée :**
+    *   La colonne "Département", devenue redondante, a été **supprimée du tableau** des clients, allégeant ainsi l'affichage.
+    *   Les contrôles de filtrage (barre de recherche par nom, liste déroulante des départements) et le bouton "Ajouter un client" ont été **réorganisés** pour une meilleure disposition, éliminant les problèmes de chevauchement et améliorant l'expérience utilisateur.
+
+### 🐛 Corrections de bogues
+
+1.  **Correction du Filtre Non Fonctionnel :**
+    *   Un bogue majeur qui rendait la liste des clients vide après l'application d'un filtre par département a été résolu. La cause principale était une erreur dans la logique d'accès aux données du département (`client.departement.id` au lieu de `client.departementId`).
+
+2.  **Correction de la Pagination :**
+    *   Un problème où la pagination n'était pas réinitialisée après l'application d'un filtre a été corrigé. Désormais, la vue revient automatiquement à la **page 1** lors d'une recherche ou d'un filtrage, garantissant que les résultats sont toujours visibles.
+
+3.  **Stabilisation du Rendu :**
+    *   Correction d'une erreur de rendu React ("Objects are not valid as a React child") en refactorisant la manière dont la liste des clients est traitée avant d'être affichée. Le code est maintenant plus stable et lisible.
+
+---
+
+## 🔖 Correctif 2.5.1 (10 juillet 2025 – fin de journée)
+
+Suite aux retours internes, plusieurs corrections rapides ont été déployées après la publication initiale de la v2.5 :
+
+### ✨ Améliorations
+
+1. **Tableau "Souscripteurs" – Actions claires**
+   * Refactorisation du bloc "Actions" du tableau afin de ne conserver qu’un bouton **Modifier** et un bouton **Supprimer**.
+   * Uniformisation des styles (couleurs, `hover`, `box-shadow`) avec le design système.
+
+2. **Filtre Département (Souscripteurs)**
+   * Ajout d’un menu déroulant pour filtrer les souscripteurs par département.
+   * Chargement dynamique de la liste des départements via `/api/admin/departements`.
+
+3. **Section "Utilisateurs"**
+   * Intégration d’une nouvelle section listant les utilisateurs avec recherche par nom/email.
+
+### 🐛 Corrections
+
+1. **Bloc JSX dupliqué**
+   * Suppression de fragments HTML/JSX redondants qui provoquaient des erreurs de compilation (« Unexpected token », balises non fermées).
+
+2. **Placeholder `onClick` vide**
+   * Remplacement du placeholder par une redirection fonctionnelle vers la page de modification du souscripteur.
+
+3. **Lints & Typescript**
+   * Résolution de plus de 15 erreurs de lint/TS signalées par l’IDE (balises non fermées, `';' expected`, etc.).
+
+4. **Navigation Admin**
+   * Les nouvelles sections **Souscripteurs**, **Utilisateurs** et **Produits** sont désormais accessibles depuis `/admin?section=...`.
+
+> Ces correctifs garantissent une compilation sans erreur et améliorent la stabilité générale de l'interface d'administration.

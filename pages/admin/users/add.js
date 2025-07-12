@@ -1,5 +1,5 @@
 import { getSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
@@ -29,10 +29,25 @@ export async function getServerSideProps(context) {
 }
 
 export default function AddUser() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'COMMERCIAL' });
+  const [departements, setDepartements] = useState([]);
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'COMMERCIAL', departementId: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchDepartements = async () => {
+      const res = await fetch('/api/admin/departements');
+      if (res.ok) {
+        const data = await res.json();
+        setDepartements(data);
+        if (data.length > 0) {
+          setForm(f => ({ ...f, departementId: data[0].id }));
+        }
+      }
+    };
+    fetchDepartements();
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -154,6 +169,32 @@ export default function AddUser() {
             <option value="COMMERCIAL">Commercial</option>
           </select>
         </label>
+        {form.role === 'COMMERCIAL' && (
+          <label style={{ fontWeight: 600, color: '#222' }}>
+            Département
+            <select
+              value={form.departementId}
+              onChange={e => setForm({ ...form, departementId: e.target.value })}
+              required={form.role === 'COMMERCIAL'}
+              style={{
+                width: '100%',
+                padding: 13,
+                border: '1.5px solid #cce8f6',
+                borderRadius: 10,
+                background: '#f6fcff',
+                fontSize: 17,
+                outline: 'none',
+                transition: 'border 0.2s',
+                fontFamily: 'inherit',
+                marginTop: 4
+              }}
+            >
+              {departements.map(dep => (
+                <option key={dep.id} value={dep.id}>{dep.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           type="submit"
           style={{

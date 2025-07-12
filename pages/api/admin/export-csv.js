@@ -11,12 +11,14 @@ export default async function handler(req, res) {
   const prisma = new PrismaClient();
   try {
     // Export users
-    const users = await prisma.user.findMany({ select: { email: true, name: true, role: true } });
-    const usersCsv = new Parser({ fields: ['email', 'name', 'role'] }).parse(users);
+    const users = await prisma.user.findMany({ select: { email: true, name: true, role: true, departementId: true }, include: { departement: { select: { name: true } } } });
+    const usersData = users.map(u => ({ email: u.email, name: u.name, role: u.role, departementId: u.departementId || '', departementName: u.departement?.name || '' }));
+    const usersCsv = new Parser({ fields: ['email', 'name', 'role', 'departementId', 'departementName'] }).parse(usersData);
 
     // Export clients
-    const clients = await prisma.client.findMany({ select: { name: true } });
-    const clientsCsv = new Parser({ fields: ['name'] }).parse(clients);
+    const clients = await prisma.client.findMany({ select: { id: true, name: true, departementId: true }, include: { departement: { select: { name: true } } } });
+    const clientsData = clients.map(c => ({ id: c.id, name: c.name, departementId: c.departementId || '', departementName: c.departement?.name || '' }));
+    const clientsCsv = new Parser({ fields: ['id', 'name', 'departementId', 'departementName'] }).parse(clientsData);
 
     // Export products
     const products = await prisma.product.findMany({ select: { reference: true, description: true } });
@@ -25,9 +27,11 @@ export default async function handler(req, res) {
     // Export contracts
     const contracts = await prisma.contract.findMany({
       select: { id: true, clientId: true, userId: true, startDate: true, duration: true, status: true, email: true },
+      include: { client: { select: { departementId: true, departement: { select: { name: true } } } } },
       orderBy: { startDate: 'desc' },
     });
-    const contractsCsv = new Parser({ fields: ['id', 'clientId', 'userId', 'startDate', 'duration', 'status', 'email'] }).parse(contracts);
+    const contractsData = contracts.map(c => ({ ...c, departementId: c.client?.departementId || '', departementName: c.client?.departement?.name || '' }));
+    const contractsCsv = new Parser({ fields: ['id', 'clientId', 'userId', 'departementId', 'departementName', 'startDate', 'duration', 'status', 'email'] }).parse(contractsData);
 
     // Export contractProducts
     const contractProducts = await prisma.contractProduct.findMany({ select: { contractId: true, productId: true, quantity: true } });

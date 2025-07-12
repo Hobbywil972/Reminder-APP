@@ -1,5 +1,5 @@
 import { getSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 export async function getServerSideProps(context) {
@@ -14,17 +14,23 @@ export async function getServerSideProps(context) {
   }
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
+  const { id } = context.params;
+
   const userToEdit = await prisma.user.findUnique({
-    where: { id: parseInt(context.params.id, 10) },
-    select: { id: true, name: true, email: true, role: true },
+    where: { id: parseInt(id, 10) },
+    select: { id: true, name: true, email: true, role: true, departementId: true },
   });
+
   if (!userToEdit) {
     return { notFound: true };
   }
-  return { props: { userToEdit } };
+
+  const departements = await prisma.departement.findMany();
+
+  return { props: { userToEdit, departements } };
 }
 
-export default function EditUser({ userToEdit }) {
+export default function EditUser({ userToEdit, departements }) {
   const [form, setForm] = useState({ ...userToEdit, password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -46,7 +52,8 @@ export default function EditUser({ userToEdit }) {
         name: form.name,
         email: form.email,
         password: form.password ? form.password : undefined,
-        role: form.role,
+                role: form.role,
+        departementId: form.departementId,
       }),
     });
     if (res.ok) {
@@ -78,9 +85,24 @@ export default function EditUser({ userToEdit }) {
           Rôle
           <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={{ width: '100%', padding: 8 }}>
             <option value="ADMIN">Administrateur</option>
-            <option value="COMMERCIAL">Commercial</option>
+                        <option value="COMMERCIAL">Commercial</option>
           </select>
         </label>
+        {form.role === 'COMMERCIAL' && (
+          <label>
+            Département
+            <select 
+              value={form.departementId}
+              onChange={e => setForm({ ...form, departementId: e.target.value })}
+              required={form.role === 'COMMERCIAL'}
+              style={{ width: '100%', padding: 8 }}
+            >
+              {departements.map(dep => (
+                <option key={dep.id} value={dep.id}>{dep.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <button type="submit" style={{ padding: 10, background: '#222', color: '#fff', border: 'none', borderRadius: 4 }}>Enregistrer</button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {success && <p style={{ color: 'green' }}>{success}</p>}

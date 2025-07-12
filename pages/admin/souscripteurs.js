@@ -33,10 +33,24 @@ export async function getServerSideProps(context) {
 
 export default function SouscripteursSection({ user }) {
   const [souscripteurs, setSouscripteurs] = useState([]);
+  const [departements, setDepartements] = useState([]);
+  const [selectedDepartement, setSelectedDepartement] = useState('');
   const [loading, setLoading] = useState(true);
   // const [mode, setMode] = useState('list'); // "list", "add", "edit" - Si on opte pour une SPA
   // const [editSouscripteur, setEditSouscripteur] = useState(null); // Pour le mode édition SPA
   const router = useRouter();
+
+  const fetchDepartements = async () => {
+    try {
+      const res = await fetch('/api/admin/departements', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setDepartements(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des départements:', error);
+    }
+  };
 
   const fetchSouscripteurs = async () => {
     setLoading(true);
@@ -60,6 +74,7 @@ export default function SouscripteursSection({ user }) {
   };
 
   useEffect(() => {
+    fetchDepartements();
     fetchSouscripteurs();
   }, []);
 
@@ -82,13 +97,28 @@ export default function SouscripteursSection({ user }) {
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10,
             transition: 'background 0.15s',
           }}
-          onMouseOver={e => (e.currentTarget.style.background = '#0090b3')}
-          onMouseOut={e => (e.currentTarget.style.background = '#00b3e6')}
-          onClick={() => router.push('/admin/souscripteurs/creer')}
+                              onClick={() => router.push('/admin/souscripteurs/creer')}
         >
           <span role="img" aria-label="ajouter">➕</span> Ajouter un Souscripteur
         </button>
       </header>
+
+      {/* Filtres */}
+      <div style={{ background: '#fff', boxShadow: '0 2px 16px #00b3e610', borderRadius: 16, padding: '12px 24px', marginBottom: 18, display: 'flex', alignItems: 'flex-end', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <label style={{ fontWeight: 600, color: '#0090b3', fontSize: 13, marginBottom: 2 }}>Département</label>
+          <select
+            value={selectedDepartement}
+            onChange={e => setSelectedDepartement(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid #cce8f6', fontSize: 15, background: '#f6fcff', minWidth: 180 }}
+          >
+            <option value="">Tous les départements</option>
+            {departements.map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {loading ? (
         <p>Chargement des souscripteurs...</p>
@@ -104,64 +134,63 @@ export default function SouscripteursSection({ user }) {
               </tr>
             </thead>
             <tbody>
-              {souscripteurs.map((s, idx) => (
-                <tr key={s.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
-                  <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.name}</td>
-                  <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.email}</td>
-                  <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.client?.name || 'N/A'}</td>
-                  <td style={{ padding: '12px 8px', fontSize: 17, borderBottom: '1px solid #e0e0e0', textAlign: 'center' }}>
-                    <button
-                      style={{
-                        background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 8,
-                        padding: '8px 16px', fontWeight: 600, fontSize: 15,
-                        fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620',
-                        marginRight: 8, cursor: 'pointer', display: 'inline-flex',
-                        alignItems: 'center', gap: 8, transition: 'background 0.15s',
-                      }}
-                      onMouseOver={e => (e.currentTarget.style.background = '#0090b3')}
-                      onMouseOut={e => (e.currentTarget.style.background = '#00b3e6')}
-                      onClick={() => router.push(`/admin/souscripteurs/modifier/${s.id}`)} // Pour une page dédiée à la modification
-                      title="Modifier le souscripteur"
-                    >
-                      <span role="img" aria-label="crayon">✏️</span> Modifier
-                    </button>
-                    <button
-                      style={{
-                        background: '#ff4957', color: '#fff', border: 'none', borderRadius: 8,
-                        padding: '8px 16px', fontWeight: 600, fontSize: 15,
-                        fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #ff495720',
-                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-                        gap: 8, transition: 'background 0.15s',
-                      }}
-                      onMouseOver={e => (e.currentTarget.style.background = '#c9001a')}
-                      onMouseOut={e => (e.currentTarget.style.background = '#ff4957')}
-                      onClick={async () => {
-                        if (window.confirm(`Êtes-vous sûr de vouloir supprimer le souscripteur ${s.name} ? Cette action est irréversible.`)) {
-                          try {
-                            const res = await fetch(`/api/admin/souscripteurs/${s.id}`, {
-                              method: 'DELETE',
-                              credentials: 'include',
-                            });
-                            if (res.ok) {
-                              alert('Souscripteur supprimé avec succès.');
-                              fetchSouscripteurs(); // Rafraîchir la liste
-                            } else {
-                              const errorData = await res.json();
-                              alert(`Erreur lors de la suppression : ${errorData.error || 'Erreur inconnue'}`);
-                            }
-                          } catch (error) {
-                            console.error('Erreur de connexion lors de la suppression:', error);
-                            alert('Une erreur de connexion est survenue lors de la tentative de suppression.');
-                          }
-                        }
-                      }}
-                      title="Supprimer le souscripteur"
-                    >
-                      <span role="img" aria-label="poubelle">🗑️</span> Supprimer
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {souscripteurs
+                .filter(s => selectedDepartement ? s.client?.departement?.id === parseInt(selectedDepartement) : true)
+                .map((s, idx) => (
+                  <tr key={s.id} style={{ background: idx % 2 === 0 ? '#f6fcff' : '#e6f7fa' }}>
+                    <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.name}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.email}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 17, borderBottom: '1px solid #e0e0e0' }}>{s.client?.name || 'N/A'}</td>
+                    <td style={{ padding: '12px 8px', fontSize: 17, borderBottom: '1px solid #e0e0e0', textAlign: 'center' }}>
+  {/* Bouton Modifier */}
+  <button
+    style={{
+      background: '#00b3e6', color: '#fff', border: 'none', borderRadius: 8,
+      padding: '8px 16px', fontWeight: 600, fontSize: 15,
+      fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #00b3e620',
+      marginRight: 8, cursor: 'pointer', display: 'inline-flex',
+      alignItems: 'center', gap: 8, transition: 'background 0.15s',
+    }}
+            onClick={() => router.push(`/admin/souscripteurs/modifier/${s.id}`)}
+    title="Modifier le souscripteur"
+  >
+    <span role="img" aria-label="crayon">✏️</span> Modifier
+  </button>
+
+  {/* Bouton Supprimer */}
+  <button
+    style={{
+      background: '#ff4957', color: '#fff', border: 'none', borderRadius: 8,
+      padding: '8px 16px', fontWeight: 600, fontSize: 15,
+      fontFamily: 'Montserrat, sans-serif', boxShadow: '0 2px 8px #ff495720',
+      cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+      gap: 8, transition: 'background 0.15s',
+    }}
+            onClick={async () => {
+      if (window.confirm(`Êtes-vous sûr de vouloir supprimer le souscripteur ${s.name} ?`)) {
+        try {
+          const res = await fetch(`/api/admin/souscripteurs/${s.id}`, { method: 'DELETE', credentials: 'include' });
+          if (res.ok) {
+            alert('Souscripteur supprimé avec succès.');
+            fetchSouscripteurs();
+          } else {
+            const { error } = await res.json();
+            alert(`Erreur : ${error || 'inconnue'}`);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Erreur réseau lors de la suppression.');
+        }
+      }
+    }}
+    title="Supprimer le souscripteur"
+  >
+    <span role="img" aria-label="poubelle">🗑️</span> Supprimer
+  </button>
+</td>
+</tr>
+
+                ))}
               {souscripteurs.length === 0 && !loading && (
                 <tr>
                   <td colSpan="4" style={{ textAlign: 'center', padding: '20px', fontSize: 17, color: '#555' }}>

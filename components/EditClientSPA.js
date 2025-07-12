@@ -1,13 +1,34 @@
 import { useState, useEffect } from 'react';
 
-export default function EditClientSPA({ client, onSuccess, onCancel }) {
+export default function EditClientSPA({ client, onSuccess, onCancel, departementFixed = false }) {
+  const [departements, setDepartements] = useState([]);
+  const [departementId, setDepartementId] = useState(client?.departementId || '');
   const [name, setName] = useState(client?.name || '');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    const fetchDepartements = async () => {
+      try {
+        const res = await fetch('/api/admin/departements');
+        if (res.ok) {
+          setDepartements(await res.json());
+        } else {
+          console.error('Failed to fetch departements');
+        }
+      } catch (error) {
+        console.error('Error fetching departements:', error);
+      }
+    };
+    fetchDepartements();
+  }, []);
+
+  useEffect(() => {
     setName(client?.name || '');
+    setDepartementId(client?.departementId || '');
   }, [client]);
+    
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +41,7 @@ export default function EditClientSPA({ client, onSuccess, onCancel }) {
     const res = await fetch('/api/admin/clients', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: client.id, name }),
+      body: JSON.stringify({ id: client.id, name, departementId }),
       credentials: 'include',
     });
     if (res.ok) {
@@ -57,6 +78,27 @@ export default function EditClientSPA({ client, onSuccess, onCancel }) {
           onFocus={e => (e.target.style.border = '1.5px solid #00b3e6')}
           onBlur={e => (e.target.style.border = '1.5px solid #cce8f6')}
         />
+        {!departementFixed && (
+        <select
+          value={departementId}
+          onChange={e => setDepartementId(e.target.value)}
+          style={{
+            padding: 13,
+            border: '1.5px solid #cce8f6',
+            borderRadius: 10,
+            background: '#f6fcff',
+            fontSize: 17,
+            outline: 'none',
+            transition: 'border 0.2s',
+            fontFamily: 'inherit',
+            appearance: 'none'
+          }}
+        >
+          {departements.map(dep => (
+            <option key={dep.id} value={dep.id}>{dep.name}</option>
+          ))}
+        </select>
+        )}
         <button
           type="submit"
           style={{

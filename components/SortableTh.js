@@ -24,8 +24,11 @@ export function SortableTh({ label, sortKey, sort = {}, setSort = () => {}, styl
 
 export function useSortableData(data, sort) {
   if (typeof useMemo !== 'function') throw new Error('useSortableData doit être appelé dans un composant React ou un hook personnalisé.');
-  return useMemo(() => {
-    const sorted = [...data];
+    return useMemo(() => {
+    if (!sort || !sort.key) {
+      return data; // Retourne les données non triées si pas de config de tri
+    }
+        const sorted = [...data];
     sorted.sort((a, b) => {
       let aVal, bVal;
 

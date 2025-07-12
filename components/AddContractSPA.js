@@ -95,15 +95,16 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
       return;
     }
 
-    // Validation de l'email : obligatoire seulement à la création
-    if (!isUpdate && !email) {
+    // Validation de l'email
+    if (email) {
+      const allowedDomains = ['@infodom.com', '@dataguadeloupe.com', '@antiane.com'];
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !allowedDomains.some(domain => email.endsWith(domain))) {
+        setError('Adresse email invalide ou domaine non autorisé (doit se terminer par @infodom.com, @dataguadeloupe.com, ou @antiane.com)');
+        return;
+      }
+    } else if (!isUpdate) {
+      // L'email est obligatoire uniquement à la création
       setError('L\'adresse email est obligatoire pour la création d\'un contrat.');
-      return;
-    }
-
-    // Validation du format de l'email s'il est fourni
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setError('Le format de l\'adresse email est invalide.');
       return;
     }
 
@@ -128,7 +129,7 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
       setError('Erreur technique : CSRF Token manquant. Veuillez recharger la page.');
       return;
     }
-    const body = JSON.stringify({
+    const contractData = {
       clientId: Number(clientId),
       productsWithQuantities,
       startDate,
@@ -137,12 +138,16 @@ export default function AddContractSPA({ clients, products, onSuccess, onCancel,
       renewalAlertMonths: Number(renewalAlertMonths),
       email,
       commentaire,
+      userEmail,
       ...(initialContract && { id: initialContract.id }),
-    });
+    };
+
+    console.log('[DEBUG] Données envoyées à l\'API:', contractData);
+
     const res = await fetch('/api/admin/contracts', {
       method: initialContract ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body,
+      body: JSON.stringify(contractData),
       credentials: 'include',
     });
     if (res.ok) {

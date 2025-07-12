@@ -37,6 +37,8 @@ export default function AddSouscripteurPage({ user }) { // Accepter 'user' comme
   const [success, setSuccess] = useState('');
   const [errorClients, setErrorClients] = useState('');
   const router = useRouter();
+  // Détermine l'URL de retour en fonction du rôle (Commercial vs Admin)
+  const listPath = user.role === 'COMMERCIAL' ? '/commercial/dashboard?section=souscripteurs' : '/admin?section=souscripteurs';
 
   useEffect(() => {
     async function fetchClients() {
@@ -78,7 +80,7 @@ export default function AddSouscripteurPage({ user }) { // Accepter 'user' comme
       });
       if (res.ok) {
         setSuccess('Souscripteur créé avec succès ! Redirection...');
-        setTimeout(() => router.push('/admin?section=souscripteurs'), 1500); // Rediriger vers la section souscripteurs
+        setTimeout(() => router.push(listPath), 1500); // Rediriger vers la section souscripteurs
       } else {
         const data = await res.json();
         setError(data.error || 'Erreur lors de la création du souscripteur.');
@@ -187,7 +189,7 @@ export default function AddSouscripteurPage({ user }) { // Accepter 'user' comme
         {/* On peut ajouter un bouton Annuler spécifique au formulaire si besoin */}
         <button
           type="button" // Important pour ne pas soumettre le formulaire
-          onClick={() => router.push('/admin?section=souscripteurs')}
+          onClick={() => router.push(listPath)}
           style={{
             marginTop: 20, background: 'transparent', color: '#555',
             border: '1.5px solid #ddd', padding: '11px 0', borderRadius: 10,

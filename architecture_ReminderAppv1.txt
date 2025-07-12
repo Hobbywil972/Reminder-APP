@@ -135,4 +135,50 @@
    - **Gestion des Migrations Prisma :** En cas de désynchronisation entre le `schema.prisma` et la base de données (provoquant des erreurs de migration), la procédure de résolution consiste à utiliser `npx prisma db pull` pour réaligner le schéma sur l'état de la base, puis `npx prisma generate` pour mettre à jour le client Prisma. Cette étape est cruciale avant de tenter de nouvelles migrations.
    - **Standard de Sécurisation des API :** Pour assurer une authentification fiable, en particulier sur des plateformes comme Vercel, la méthode `getServerSession(req, res, authOptions)` est désormais la norme pour sécuriser les points d'API. Elle remplace l'ancienne approche `getToken`, qui s'est avérée moins robuste pour récupérer les sessions dans certains contextes. Cette méthode est utilisée dans les API handlers pour valider la session et le rôle de l'utilisateur avant d'autoriser l'accès aux ressources.
 
-Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 7 juillet 2025. Il a été mis à jour pour documenter l'utilisation de `getServerSession` comme standard de sécurisation des API, résolvant un problème d'authentification sur Vercel. Il pourra nécessiter des mises à jour si l'application continue d'évoluer.
+## 10. Mises à jour récentes (10 Juillet 2025)
+
+   - **Correction du Tableau de Bord Commercial :**
+     - **Problème :** Les widgets du tableau de bord commercial (`pages/commercial/CommercialDashboardWidgets.js`) affichaient des statistiques globales (tous départements confondus) car ils utilisaient les API d'administration (`/api/admin/clients`, `/api/admin/contracts`).
+     - **Solution :**
+       - Création d'un nouvel endpoint API dédié : `/api/commercial/stats.js`. Cet endpoint est sécurisé et retourne les statistiques (nombre de clients, de contrats, et de contrats arrivant à échéance) filtrées par le `departementId` du commercial authentifié.
+       - Mise à jour du composant `CommercialDashboardWidgets.js` pour qu'il interroge ce nouvel endpoint, garantissant ainsi que les données affichées sont exactes et pertinentes pour l'utilisateur connecté.
+
+   - **Enrichissement de la Session Utilisateur (NextAuth) :**
+     - **Problème :** Le `departementId`, nécessaire pour filtrer les données, n'était pas disponible dans l'objet session de l'utilisateur.
+     - **Solution :** Modification du fichier de configuration de NextAuth (`pages/api/auth/[...nextauth].js`). Le `departementId` est maintenant ajouté à l'objet utilisateur lors de l'authentification (dans la fonction `authorize`) et propagé au token JWT et à l'objet session via les callbacks `jwt` et `session`.
+
+   - **Extension de la Validation des Emails de Contrat :**
+     - **Problème :** Le formulaire d'ajout/modification de contrat n'autorisait que les adresses email se terminant par `@infodom.com`.
+     - **Solution :** La logique de validation a été étendue pour accepter également les domaines `@dataguadeloupe.com` et `@antiane.com`. Cette modification a été appliquée à deux niveaux pour assurer la cohérence :
+       - Côté client, dans le composant `components/AddContractSPA.js`.
+       - Côté serveur, dans l'API `pages/api/admin/contracts.js`.
+
+## 11. Modules dédiés au rôle COMMERCIAL (Contrats, Produits, Clients)
+
+### 11.1 Front-End
+- `pages/commercial/dashboard.js` : page racine du commercial (layout, sidebar, routing interne).
+- `components/CommercialDashboardWidgets.js` : widgets statistiques (nb clients, nb contrats, échéances).
+- `components/CommercialContractsSection.js` : gestion complète des contrats (liste, filtres, tri, pagination, ajout/édition via `AddContractSPA`). La colonne « Commercial » affiche désormais `contract.user.name` (nom du créateur du contrat) ; fallback « N/A » si absent.
+- `components/AddContractSPA.js` : formulaire SPA pour créer/éditer un contrat.
+- `components/SortableTh.js` : entêtes triables partagés.
+- `components/AddClientSPA.js`, `components/EditClientSPA.js` : formulaires SPA pour les clients accessibles au commercial.
+
+### 11.2 API Back-End
+- `pages/api/commercial/contracts.js` : CRUD sur les contrats filtrés par `departementId`. Depuis 10 juil 2025, la requête `GET` inclut la relation `user { select: { name } }` afin que le frontend puisse afficher le nom du commercial ayant créé le contrat.
+- `pages/api/commercial/clients.js` : liste des clients du département.
+- `pages/api/commercial/stats.js` : statistiques pour les widgets.
+- Lecture seule des produits via `pages/api/admin/products.js` (pas de route dédiée « commercial/products »).
+
+### 11.3 Flux de données
+1. `dashboard.js` récupère `departementId` avec `getServerSideProps`.
+2. Les sections appellent les endpoints ci-dessus en passant `departementId` dans la query-string.
+3. Les résultats alimentent les composants de liste (contrats, clients) qui appliquent tri, pagination et filtres côté client.
+
+### 11.4 Spécificités d’accès
+- Visibilité restreinte : un commercial ne voit que les entités de son département.
+- Sécurité : chaque handler API valide la session via `getServerSession` et vérifie le rôle `COMMERCIAL`.
+- Filtres UI : champs Client, Référence produit, Commentaire, Commercial, plages de dates, avec bouton Réinitialiser.
+
+---
+
+Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 10 juillet 2025. Il a été mis à jour pour documenter l'utilisation de `getServerSession` comme standard de sécurisation des API, résolvant un problème d'authentification sur Vercel. Il pourra nécessiter des mises à jour si l'application continue d'évoluer.

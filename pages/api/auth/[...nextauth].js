@@ -83,8 +83,8 @@ export const authOptions = {
               console.log('[AUTH] Invalid password');
               return null;
           }
-          console.log('[AUTH] Credentials valid, returning user object:', { id: user.id, name: user.name, email: user.email, role: user.role });
-          return { id: user.id, name: user.name, email: user.email, role: user.role };
+          console.log('[AUTH] Credentials valid, returning user object:', { id: user.id, name: user.name, email: user.email, role: user.role, departementId: user.departementId });
+          return { id: user.id, name: user.name, email: user.email, role: user.role, departementId: user.departementId };
         } catch (err) {
           console.error('[AUTH] Erreur dans authorize:', err); // Log l'erreur
           // Retourner null pour indiquer un échec d'authentification à NextAuth
@@ -109,6 +109,7 @@ export const authOptions = {
         token.name = user.name;
         token.email = user.email;
         token.role = user.role;
+        token.departementId = user.departementId;
         // Log explicite du rôle ajouté au token
         console.log(`[AUTH][JWT] Role added to token: ${token.role}`);
       }
@@ -123,6 +124,7 @@ export const authOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.role = token.role; // Assigner à session.user.role
+        session.user.departementId = token.departementId;
         // Log explicite du rôle ajouté à la session
         console.log(`[AUTH][SESSION] Role added to session.user: ${session.user.role}`);
       } else {

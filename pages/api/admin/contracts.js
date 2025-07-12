@@ -18,16 +18,25 @@ export default async function handler(req, res) {
   const prisma = new PrismaClient();
 
   if (req.method === 'GET') {
-    // Liste tous les contrats avec client et produits associés
+    let whereClause = {};
+    if (session.user.role === 'COMMERCIAL') {
+      whereClause = {
+        client: {
+          departementId: session.user.departementId,
+        },
+      };
+    }
+
     const contracts = await prisma.contract.findMany({
+      where: whereClause,
       include: {
-        client: { select: { id: true, name: true } },
-        user: { select: { name: true } }, // Inclure le nom du commercial
+        client: { select: { id: true, name: true, departement: { select: { id: true, name: true } } } },
+        user: { select: { name: true } }, // Forcer l'inclusion du nom du commercial
         contractProducts: {
           include: {
-            product: { select: { id: true, reference: true, description: true } }
-          }
-        }
+            product: { select: { id: true, reference: true, description: true } },
+          },
+        },
       },
       orderBy: { startDate: 'desc' },
     });
@@ -35,20 +44,28 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { clientId, productsWithQuantities, startDate, status, email, renewalAlertMonths, duration, commentaire } = req.body;
+    const { clientId, productsWithQuantities, startDate, status, email, renewalAlertMonths, duration, commentaire, userEmail } = req.body;
     if (!clientId || !Array.isArray(productsWithQuantities) || productsWithQuantities.length === 0 || !startDate || !status || !email || !duration) {
       return res.status(400).json({ error: 'Champs obligatoires manquants' });
     }
+
+    const emailToConnect = userEmail || session.user.email;
+    const user = await prisma.user.findUnique({ where: { email: emailToConnect } });
+    if (!user) {
+        return res.status(400).json({ error: `L'utilisateur commercial avec l'email ${emailToConnect} n'a pas été trouvé.` });
+    }
+
     // Validation email : format et domaine
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !email.endsWith('@infodom.com')) {
-      return res.status(400).json({ error: 'Adresse email invalide ou domaine non autorisé (doit se terminer par @infodom.com)'});
+    const allowedDomains = ['@infodom.com', '@dataguadeloupe.com', '@antiane.com'];
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !allowedDomains.some(domain => email.endsWith(domain))) {
+      return res.status(400).json({ error: 'Adresse email invalide ou domaine non autorisé (doit se terminer par @infodom.com, @dataguadeloupe.com, ou @antiane.com)'});
     }
     // Calcule endDate
     const dStart = new Date(startDate);
     const dEnd = new Date(startDate);
     dEnd.setMonth(dEnd.getMonth() + Number(duration));
     if (dEnd.getDate() !== dStart.getDate()) dEnd.setDate(0);
-    console.log('[DEBUG-CONTRACT] Body reçu:', req.body, 'Session:', session?.user?.role);
+
     if (session.user.role === 'SUPERADMIN') {
       return res.status(400).json({ error: 'Veuillez quitter le mode superadmin pour ces opérations.' });
     }
@@ -56,7 +73,7 @@ export default async function handler(req, res) {
       const contract = await prisma.contract.create({
         data: {
           client: { connect: { id: clientId } },
-          user: { connect: { email: session.user.email } },
+          user: { connect: { id: user.id } }, // Connect with user ID
           startDate: dStart,
           duration: Number(duration),
           status,
@@ -90,36 +107,62 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, clientId, productsWithQuantities, startDate, status, duration, renewalAlertMonths, email, commentaire } = req.body;
+    const { id, clientId, productsWithQuantities, startDate, status, duration, renewalAlertMonths, email, commentaire, userEmail } = req.body;
     if (!id || !clientId || !Array.isArray(productsWithQuantities) || productsWithQuantities.length === 0 || !startDate || !status || !duration) {
       return res.status(400).json({ error: 'Champs obligatoires manquants pour la mise à jour' });
     }
-    // Ne vérifie pas de doublons ni de présence de référence produit par ligne, accepte plusieurs fois le même produit
-    // Met à jour le contrat + les produits associés
-    const contract = await prisma.contract.update({
-      where: { id },
-      data: {
-        client: { connect: { id: clientId } },
-        startDate: new Date(startDate),
-        duration: Number(duration),
-        renewalAlertMonths: renewalAlertMonths ? Number(renewalAlertMonths) : null,
-        email: email || null,
-        status,
-        commentaire: commentaire || null,
-        contractProducts: {
-          deleteMany: {},
-          create: productsWithQuantities.map(({ productId, quantity }) => ({
-            quantity,
-            product: { connect: { id: productId } },
-          })),
-        }
-      },
-      include: {
-        client: true,
-        contractProducts: { include: { product: true } }
+
+    let userData = {};
+    if (userEmail) {
+      const user = await prisma.user.findUnique({ where: { email: userEmail } });
+      if (user) {
+        userData = { user: { connect: { id: user.id } } };
+      } else {
+        console.warn(`[UPDATE-CONTRACT] Commercial user with email ${userEmail} not found. Contract will be updated without commercial link.`);
       }
-    });
-    return res.status(200).json(contract);
+    }
+
+    // Calcule endDate
+    const dStart = new Date(startDate);
+    const dEnd = new Date(startDate);
+    dEnd.setMonth(dEnd.getMonth() + Number(duration));
+    if (dEnd.getDate() !== dStart.getDate()) dEnd.setDate(0);
+
+    try {
+      const updatedContract = await prisma.$transaction(async (prisma) => {
+        // 1. Supprimer les anciens produits associés
+        await prisma.contractProduct.deleteMany({ where: { contractId: Number(id) } });
+
+        // 2. Mettre à jour le contrat et recréer les produits
+        const contract = await prisma.contract.update({
+          where: { id: Number(id) },
+          data: {
+            client: { connect: { id: Number(clientId) } },
+            startDate: dStart,
+            duration: Number(duration),
+            status,
+            renewalAlertMonths: Number(renewalAlertMonths),
+            email,
+            commentaire,
+            ...userData, // Ajout de la liaison utilisateur
+            contractProducts: {
+              create: productsWithQuantities.map(({ productId, quantity }) => ({ product: { connect: { id: productId } }, quantity }))
+            }
+          },
+          include: {
+            client: true,
+            user: true,
+            contractProducts: { include: { product: true } }
+          }
+        });
+        return contract;
+      });
+
+      return res.status(200).json(updatedContract);
+    } catch (error) {
+      console.error('Erreur Prisma lors de la mise à jour du contrat:', error);
+      return res.status(500).json({ error: 'Erreur serveur lors de la mise à jour' });
+    }
   }
 
   if (req.method === 'DELETE') {

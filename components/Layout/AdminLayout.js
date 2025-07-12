@@ -59,6 +59,7 @@ export default function AdminLayout({ user, children, currentSection }) {
     { section: 'souscripteurs', path: '/admin?section=souscripteurs', label: 'Souscripteurs', icon: '👤', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
     { section: 'products', path: '/admin?section=products', label: 'Produits', icon: '📦', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
     { section: 'contracts', path: '/admin?section=contracts', label: 'Contrats', icon: '📄', roles: ['ADMIN', 'SUPERADMIN', 'COMMERCIAL'] },
+    { section: 'departements', path: '/admin?section=departements', label: 'Départements', icon: '🌍', roles: ['ADMIN', 'SUPERADMIN'] },
     { path: '/admin/export-csv', label: 'Export CSV', icon: '📤', roles: ['ADMIN'], isPage: true }, // Indiquer que c'est une page dédiée
     { path: '/admin/import-csv', label: 'Import CSV', icon: '📥', roles: ['ADMIN'], isPage: true }, // Indiquer que c'est une page dédiée
     { section: 'configuration', path: '/admin?section=configuration', label: 'Configuration', icon: '⚙️', roles: ['ADMIN', 'SUPERADMIN'] },

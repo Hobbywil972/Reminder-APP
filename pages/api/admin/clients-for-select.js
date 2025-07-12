@@ -14,7 +14,19 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
+      const whereClause = {};
+
+      // Si l'utilisateur est un commercial, ne retourner que les clients de son département
+      if (session.user.role === 'COMMERCIAL') {
+        if (!session.user.departementId) {
+          // Si un commercial n'a pas de département, il ne peut voir aucun client.
+          return res.status(200).json([]);
+        }
+        whereClause.departementId = session.user.departementId;
+      }
+
       const clients = await prisma.client.findMany({
+        where: whereClause,
         select: {
           id: true,
           name: true,

@@ -8,24 +8,28 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  password  String
-  name      String
-  role      Role       @default(COMMERCIAL)
-  createdAt DateTime   @default(now())
-  clientId  Int?
-  contracts Contract[]
-  logs      Log[]
-  reminders Reminder[]
-  client    Client?    @relation("ClientSouscripteurs", fields: [clientId], references: [id])
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  password      String
+  name          String
+  role          Role         @default(COMMERCIAL)
+  createdAt     DateTime     @default(now())
+  clientId      Int?
+  departementId Int?
+  departement   Departement? @relation(fields: [departementId], references: [id])
+  contracts     Contract[]
+  logs          Log[]
+  reminders     Reminder[]
+  client        Client?      @relation("ClientSouscripteurs", fields: [clientId], references: [id])
 }
 
 model Client {
-  id            Int        @id @default(autoincrement())
-  name          String     @unique
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
   contracts     Contract[]
-  souscripteurs User[]     @relation("ClientSouscripteurs")
+  souscripteurs User[]       @relation("ClientSouscripteurs")
+  departementId Int?
+  departement   Departement? @relation(fields: [departementId], references: [id])
 }
 
 model Product {
@@ -112,4 +116,11 @@ enum ContractStatus {
   EN_COURS
   EXPIRE
   RESILIE
+}
+
+model Departement {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  users   User[]
+  clients Client[]
 }

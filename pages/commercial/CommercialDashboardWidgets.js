@@ -5,35 +5,20 @@ import { useRouter } from 'next/router';
 export default function CommercialDashboardWidgets({ setSection }) {
   const [stats, setStats] = useState({ clients: 0, contracts: 0, expiring: 0, loading: true });
 
-  useEffect(() => {
+    useEffect(() => {
     async function fetchStats() {
       setStats(s => ({ ...s, loading: true }));
-      const [clientsRes, contractsRes] = await Promise.all([
-        fetch('/api/admin/clients', { credentials: 'include' }),
-        fetch('/api/admin/contracts', { credentials: 'include' })
-      ]);
-      const clients = await clientsRes.json();
-      const contracts = await contractsRes.json();
-      // Contrats à échéance dans les 30 prochains jours
-      const now = new Date();
-      const in30d = new Date();
-      in30d.setDate(now.getDate() + 30);
-      const expiring = contracts.filter(c => {
-        let end = c.endDate;
-        if (!end && c.startDate && c.duration) {
-          const d = new Date(c.startDate);
-          d.setMonth(d.getMonth() + Number(c.duration));
-          if (d.getDate() !== new Date(c.startDate).getDate()) d.setDate(0);
-          end = d.toISOString();
+      try {
+        const response = await fetch('/api/commercial/stats');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des statistiques.');
         }
-        return end && new Date(end) >= now && new Date(end) <= in30d;
-      }).length;
-      setStats({
-        clients: Array.isArray(clients) ? clients.length : 0,
-        contracts: Array.isArray(contracts) ? contracts.length : 0,
-        expiring,
-        loading: false
-      });
+        const data = await response.json();
+        setStats({ ...data, loading: false });
+      } catch (error) {
+        console.error('Erreur widget stats:', error);
+        setStats({ clients: 0, contracts: 0, expiring: 0, loading: false });
+      }
     }
     fetchStats();
   }, []);
