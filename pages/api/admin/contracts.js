@@ -70,6 +70,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Veuillez quitter le mode superadmin pour ces opérations.' });
     }
     try {
+      // Création du contrat
       const contract = await prisma.contract.create({
         data: {
           client: { connect: { id: clientId } },
@@ -98,6 +99,29 @@ export default async function handler(req, res) {
           await sendConfirmationEmail(contract);
           console.log('[EMAIL-CONFIRMATION] Envoi terminé pour', contract.email, 'contrat', contract.id);
         } catch (e) { console.error('[EMAIL-CONFIRMATION] Erreur envoi confirmation:', contract.email, contract.id, e); }
+      }
+
+      // --- NEW: création automatique du reminder de renouvellement ---
+      if (renewalAlertMonths && Number(renewalAlertMonths) > 0) {
+        try {
+          const nextAlarm = new Date(dStart);
+          // Date de fin = start + duration mois, rappel = date fin - renewalAlertMonths mois
+          nextAlarm.setMonth(nextAlarm.getMonth() + Number(duration) - Number(renewalAlertMonths));
+          nextAlarm.setHours(0, 0, 0, 0);
+          await prisma.reminder.create({
+            data: {
+              contract: { connect: { id: contract.id } },
+              user: { connect: { id: user.id } },
+              email: email,
+              alarmOffset: Number(renewalAlertMonths),
+              nextAlarmDate: nextAlarm,
+              active: true,
+              sentDates: []
+            }
+          });
+        } catch (e) {
+          console.error('[REMINDER] Erreur création reminder pour contrat', contract.id, e);
+        }
       }
       return res.status(201).json(contract);
     } catch (error) {
@@ -158,6 +182,23 @@ export default async function handler(req, res) {
         return contract;
       });
 
+      // --- NEW: mise à jour du reminder si renewalAlertMonths modifié ---
+      try {
+        const reminder = await prisma.reminder.findFirst({ where: { contractId: Number(id) } });
+        if (reminder) {
+          const nextAlarm = new Date(dStart);
+          nextAlarm.setMonth(nextAlarm.getMonth() + Number(duration) - Number(renewalAlertMonths));
+          nextAlarm.setHours(0,0,0,0);
+          await prisma.reminder.update({
+            where: { id: reminder.id },
+            data: {
+              alarmOffset: Number(renewalAlertMonths),
+              nextAlarmDate: nextAlarm,
+              email
+            }
+          });
+        }
+      } catch(e) { console.error('[REMINDER] Erreur mise à jour reminder contrat', id, e); }
       return res.status(200).json(updatedContract);
     } catch (error) {
       console.error('Erreur Prisma lors de la mise à jour du contrat:', error);

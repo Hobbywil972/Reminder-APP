@@ -63,3 +63,25 @@ Suite aux retours internes, plusieurs corrections rapides ont été déployées 
    * Les nouvelles sections **Souscripteurs**, **Utilisateurs** et **Produits** sont désormais accessibles depuis `/admin?section=...`.
 
 > Ces correctifs garantissent une compilation sans erreur et améliorent la stabilité générale de l'interface d'administration.
+
+---
+
+## 🔖 Correctif 2.5.2 (12 juillet 2025)
+
+### 🐛 Hotfix – Filtre de contrats par département en production
+* **Symptôme :** en production, le filtre « INFODOM_Martinique » n’affichait aucun contrat alors qu’il fonctionnait en local.
+* **Cause identifiée :** les champs `departementId` des clients n’étaient pas renseignés dans la base Neon de production.
+* **Correctif appliqué :**
+  * Exécution du script `scripts/setContractsDepartement.js` après avoir positionné la variable d’environnement `DATABASE_URL` sur l’URL pooler Neon.
+  * 28 clients mis à jour ⇒ 37 contrats correctement rattachés au département.
+
+### 🛠️ Opérations DevOps / Documentation
+* Ajout de la section « 12. Configuration base de données & variables d’environnement » dans `architecture_ReminderAppv1.txt` pour centraliser :
+  * URL pooler Neon, nom/branche de la base.
+  * Variables `DATABASE_URL` & `DATABASE_URL_WITH_TIMEOUT`.
+  * Procédure complète pour relancer le script de mise à jour.
+
+### ✅ Résultat utilisateur
+* Le filtre par département affiche désormais correctement les contrats en production.
+* Documentation à jour pour éviter toute confusion future sur les connexions BD.
+

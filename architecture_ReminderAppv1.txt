@@ -181,4 +181,42 @@
 
 ---
 
-Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 10 juillet 2025. Il a été mis à jour pour documenter l'utilisation de `getServerSession` comme standard de sécurisation des API, résolvant un problème d'authentification sur Vercel. Il pourra nécessiter des mises à jour si l'application continue d'évoluer.
+Ce document est basé sur ma compréhension actuelle de l'application ReminderAPP au 10 juillet 2025. Il a été mis à jour pour documenter l'utilisation de `getServerSession` comme standard de sécurisation des API, résolvant un problème d'authentification sur Vercel.
+
+## 12. Configuration base de données & variables d’environnement (12 juillet 2025)
+
+### 12.1 Base de données de production
+- **Fournisseur :** Neon (PostgreSQL serverless).
+- **Nom de la base :** `neondb`.
+- **Branche active :** `Primary` (aucune autre branche définie pour le moment).
+- **URL pooler (utilisée par Vercel & scripts) :**  
+  `postgres://neondb_owner:npg_nfcwo7uI2JbM@ep-lucky-cloud-ablm1b0m-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&connect_timeout=30`
+
+### 12.2 Variables d’environnement (Vercel & local)
+| Variable | Description | Valeur actuelle |
+|----------|-------------|-----------------|
+| `DATABASE_URL` | Chaîne de connexion principale pour Prisma (production) | voir URL ci-dessus |
+| `DATABASE_URL_WITH_TIMEOUT` | Variante permettant d’ajouter un `connect_timeout` (utilisée ponctuellement) | même valeur que `DATABASE_URL` |
+
+### 12.3 Script de mise à jour des clients (département)
+- **Fichier :** `scripts/setContractsDepartement.js`
+- **Rôle :** met à jour le champ `departementId` de tous les clients vers l’ID du département « INFODOM_Martinique ».
+- **Commande à exécuter (exemple) :**
+  ```powershell
+  $env:DATABASE_URL = "<URL pooler>"
+  node scripts/setContractsDepartement.js
+  ```
+- **Résultat attendu :**
+  - Affiche `Clients mis à jour : <nombre>` (exemple 28).
+  - Après exécution, la requête SQL suivante doit retourner un nombre > 0 :
+    ```sql
+    SELECT COUNT(*)
+    FROM "Client"
+    WHERE "departementId" IS NOT NULL;
+    ```
+
+> **Astuce :** lorsqu’on exécute des scripts Prisma, c’est toujours `DATABASE_URL` (et non `*_WITH_TIMEOUT`) qui est lue par défaut. Vérifier et définir la bonne variable avant d’exécuter un script.
+
+Ce chapitre centralise tous les éléments nécessaires pour manipuler la base de données de production sans avoir à redemander les informations sensibles.
+
+Il pourra nécessiter des mises à jour si l'application continue d'évoluer.
